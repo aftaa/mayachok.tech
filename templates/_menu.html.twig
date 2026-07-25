@@ -1,21 +1,39 @@
 {% set currentUrl = app.request.uri %}
 <nav class="navbar navbar-expand-sm bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url('app_index') }}" data-turbo-frame="content" data-turbo-action="advance">🎵 mymixes.ru {{ rand ?? 'rand' }}</a>
+        <a class="navbar-brand" href="{{ url('app_index') }}" data-turbo-frame="content" data-turbo-action="advance">🎵
+            MyMixes.Ru</a>
         <ul class="navbar-nav ms-auto">
+            {% if app.user %}
+                <li class="nav-link">
+                    <img alt="" src="{{ app.user.avatarUrl }}" height="42" id="menu-avatar">
+                </li>
+                <li class="nav-link">
+                    <strong>Hi, {{ app.user.displayName }}!</strong>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <a class="nav-link{{ currentUrl == path('app_connect') ? ' active' : '' }}"
+                       href="{{ url('app_connect') }}" data-turbo-frame="content"
+                       data-turbo-action="advance">Connect</a>
+                </li>
+            {% endif %}
             <li class="nav-item">
-                <a class="nav-link{{ currentUrl == path('app_index') ? ' active' : '' }}" href="{{ url('app_index') }}" data-turbo-frame="content" data-turbo-action="advance">Index</a>
+                <a class="nav-link{{ currentUrl == path('app_privacy') ? ' active' : '' }}"
+                   href="{{ url('app_privacy') }}" data-turbo-frame="content" data-turbo-action="advance">Privacy</a>
             </li>
-            <li class="nav-item">
-                {% if app.user %}
-                    <a class="nav-link" href="">Logout</a>
-                {% else %}
-                    <a class="nav-link{{ currentUrl == path('app_connect') ? ' active' : '' }}" href="{{ url('app_connect') }}" data-turbo-frame="content" data-turbo-action="advance">Connect</a>
-                {% endif %}
-            </li>
-            <li class="nav-item">
-                <a class="nav-link{{ currentUrl == path('app_privacy') ? ' active' : '' }}" href="{{ url('app_privacy') }}" data-turbo-frame="content" data-turbo-action="advance">Privacy</a>
-            </li>
+            {% if app.user %}
+                <li>
+                    <a class="nav-link" href="{{ url('app_logout') }}">Upload</a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url('app_logout') }}">Profile</a>
+                </li>
+                <li>
+                    <a class="nav-link" href="{{ url('app_logout') }}">Logout</a>
+                </li>
+            {% endif %}
+
         </ul>
     </div>
 </nav>

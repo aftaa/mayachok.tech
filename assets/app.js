@@ -30,14 +30,6 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
 //     }
 // });
 
-const loadMenu = (rand) => {
-    fetch('/_menu', { body: JSON.stringify(rand) })
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById('menu').innerHTML = html;
-        });
-}
-
 document.addEventListener('DOMContentLoaded', function () {
     const banner = document.getElementById('cookie-banner');
     const acceptBtn = document.getElementById('cookie-accept');
