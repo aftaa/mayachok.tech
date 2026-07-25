@@ -50,6 +50,18 @@
             "bin/phpunit"
         ]
     },
+    "sensiolabs/minify-bundle": {
+        "version": "1.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "0.9",
+            "ref": "b762016c180efbeff79b7a0eb95db7ec74c8e9d6"
+        },
+        "files": [
+            "config/packages/sensiolabs_minify.yaml"
+        ]
+    },
     "symfony/asset-mapper": {
         "version": "8.1",
         "recipe": {
@@ -317,6 +329,19 @@
         },
         "files": [
             "config/packages/messenger.yaml"
+        ]
+    },
+    "symfonycasts/sass-bundle": {
+        "version": "0.10",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "0.5",
+            "ref": "4812be2fc05dad51e05837779e9175321fb68d9f"
+        },
+        "files": [
+            "config/packages/symfonycasts_sass.yaml",
+            "assets/styles/app.scss"
         ]
     },
     "twig/extra-bundle": {

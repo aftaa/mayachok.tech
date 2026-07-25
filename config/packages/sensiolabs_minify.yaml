@@ -1,0 +1,19 @@
+sensiolabs_minify:
+    asset_mapper:
+        # Exclude already minified assets
+        ignore_paths:
+            - '*.min.js'
+            - '*.min.css'
+    minify:
+        # Use local binary if available
+        # local_binary: 'auto'
+
+        # Specify local binary path
+        # local_binary: '/usr/bin/minify'
+
+        # Download binary from GitHub
+        download_binary: true
+
+when@test:
+    sensiolabs_minify:
+        asset_mapper: false

@@ -1,0 +1,40 @@
+services:
+    nginx:
+        image: nginx:1.29.8-alpine
+        ports:
+            - "49020:80"   # 👈 оставляем
+        volumes:
+            - ./docker/nginx/conf:/etc/nginx/conf.d:ro
+            - ./docker/nginx/logs:/var/log/nginx
+        depends_on:
+            php:
+                condition: service_started
+        restart: always
+
+    php:
+        build:
+            context: .
+            dockerfile: ./docker/php/Dockerfile
+            target: production
+        volumes:
+            - ./docker/php/supervisor/logs:/var/log/supervisor
+            - ./docker/php/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+            - ./docker/php/supervisor/conf:/etc/supervisor/conf.d:ro
+        environment:
+            APP_ENV: prod
+            APP_DEBUG: 0
+        restart: always
+
+    mysql:
+        image: mysql:9.7.1
+        ports:
+            - "49021:3306"   # 👈 оставляем
+        volumes:
+            - ./docker/mysql/data:/var/lib/mysql
+            - ./docker/mysql/init:/docker-entrypoint-initdb.d
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        restart: always

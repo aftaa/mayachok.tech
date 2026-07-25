@@ -18,3 +18,20 @@
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+
+/docker/mysql/data
+/docker/mysql/logs
+/docker/nginx/logs
+/docker/php/supervisor/logs
+/docker/rabbitmq/data
+/docker/rabbitmq/logs
+/docker/redis/data
+/docker/redis/logs
+
+###> sensiolabs/minify-bundle ###
+/var/minify/
+###< sensiolabs/minify-bundle ###
+
+###> symfonycasts/sass-bundle ###
+/public/assets/
+###< symfonycasts/sass-bundle ###

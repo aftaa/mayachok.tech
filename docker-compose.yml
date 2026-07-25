@@ -1,0 +1,49 @@
+services:
+    nginx:
+        image: nginx:1.29.8-alpine
+        ports:
+            - "49020:80"
+        volumes:
+            - .:/var/www/tech
+            - ./docker/nginx/conf:/etc/nginx/conf.d
+            - ./docker/nginx/logs:/var/log/nginx
+        depends_on:
+            php:
+                condition: service_started
+    php:
+        build:
+            context: .
+            dockerfile: ./docker/php/Dockerfile
+            target: dev
+        volumes:
+            - .:/var/www/tech
+#            - ./docker/php/supervisor/logs:/var/log/supervisor
+            - ./docker/php/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+            - ./docker/php/supervisor/conf:/etc/supervisor/conf.d
+            - ~/.gitconfig:/home/appuser/.gitconfig:ro
+        dns:
+            - 8.8.8.8
+            - 1.1.1.1
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        depends_on:
+            mysql:
+                condition: service_healthy
+    mysql:
+        image: mysql:9.7.1
+        ports:
+            - "49021:3306"
+        volumes:
+            - ./docker/mysql/data:/var/lib/mysql
+            - ./docker/mysql/logs:/var/log/mysql
+            - ./docker/mysql/init:/docker-entrypoint-initdb.d
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: tech
+            MYSQL_USER: tech
+            MYSQL_PASSWORD: tech
+        healthcheck:
+            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot" ]
+            timeout: 3s
+            retries: 15
+            start_period: 1s

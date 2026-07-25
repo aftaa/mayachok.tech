@@ -1,0 +1,104 @@
+@import 'variables';
+@import '../vendor/bootstrap/dist/css/bootstrap.min.css';
+@import 'theme';
+
+body {
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+main {
+    padding-bottom: 80px;
+}
+
+.container {
+    max-width: 720px;
+    padding-top: 2rem;
+}
+
+.card {
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 16px 20px;
+    border-top: 2px solid #6c63ff;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+    font-family: sans-serif;
+
+    &__content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+
+        @media (min-width: 768px) {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+    }
+
+    &__text {
+        margin: 0;
+        font-size: 14px;
+        text-align: center;
+
+        a {
+            color: #6c63ff;
+            text-decoration: underline;
+
+            &:hover {
+                color: #8a82ff;
+            }
+        }
+
+        @media (min-width: 768px) {
+            text-align: left;
+            flex: 1;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &-primary {
+            background: #6c63ff;
+            color: #fff;
+
+            &:hover {
+                background: #5a52e0;
+            }
+        }
+
+        &-secondary {
+            background: transparent;
+            color: #aaa;
+            border: 1px solid #555;
+
+            &:hover {
+                background: #2a2a3e;
+            }
+        }
+    }
+}

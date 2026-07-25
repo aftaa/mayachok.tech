@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block head %}
+    <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
+{% endblock %}
+
+{% block body %}
+    <script>
+        const showYandexLogin = () => {
+            YaAuthSuggest.init(
+                {
+                    client_id: 'ce72120c92114b4e9ec16be7f444898c',
+                    response_type: 'token',
+                    redirect_uri: '{{ url('app_yandex_auth_callback') }}',
+                    parentId: 'yandex-widget'
+                },
+                '{{ url('app_connect') }}'
+            )
+                .then(({handler}) => handler())
+                .then(data => {
+                    console.log(data);
+                    // fetch('/api/auth/yandex', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({ token: data.token })
+                    // });
+                    loadMenu(Math.random());
+                })
+                .catch(error => console.log('Обработка ошибки', error));
+        };
+
+        {% if not app.user %}
+            document.addEventListener('DOMContentLoaded', showYandexLogin);
+            document.addEventListener('turbo:load', showYandexLogin);
+        {% endif %}
+    </script>
+{% endblock %}

@@ -1,0 +1,13 @@
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bs-body-bg: #0a0a0f;
+        --bs-body-color: #f0f0f5;
+        --bs-card-bg: #14141e;
+        --bs-card-border-color: #2a2a3a;
+        --bs-secondary: #3a3a4a;
+    }
+
+    $body-bg: #0a0a0f;
+    $body-color: #f0f0f5;
+    $card-bg: #14141e;
+}
