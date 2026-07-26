@@ -17,10 +17,10 @@ services:
             target: dev
         volumes:
             - .:/var/www/tech
-#            - ./docker/php/supervisor/logs:/var/log/supervisor
             - ./docker/php/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
             - ./docker/php/supervisor/conf:/etc/supervisor/conf.d
             - ~/.gitconfig:/home/appuser/.gitconfig:ro
+            - ./docker/php/pool-override.conf:/usr/local/etc/php-fpm.d/zz-override.conf:ro
         dns:
             - 8.8.8.8
             - 1.1.1.1
@@ -47,3 +47,16 @@ services:
             timeout: 3s
             retries: 15
             start_period: 1s
+    mercure:
+        image: dunglas/mercure
+        environment:
+            SERVER_NAME: ':80'
+            MERCURE_PUBLISHER_JWT_KEY: 'l+GvN1/vT4ik8oxZL848Jm7ehk1zN64oEH0yr8AWBpA='
+            MERCURE_SUBSCRIBER_JWT_KEY: 'l+GvN1/vT4ik8oxZL848Jm7ehk1zN64oEH0yr8AWBpA='
+            MERCURE_EXTRA_DIRECTIVES: |
+                cors_origins "*"
+                publish_origins "http://localhost:49022"
+                anonymous 1
+                subscriptions 1
+        ports:
+            - "49022:80"

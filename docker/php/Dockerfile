@@ -1,6 +1,25 @@
 ARG APP_DIR=/var/www/tech
 
 # ==========================================
+# STAGE: AUDIOWAVEFORM BUILDER (Временный слой для сборки)
+# ==========================================
+FROM debian:bookworm-slim AS audiowaveform-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git cmake make g++ gcc libmad0-dev libid3tag0-dev \
+    libsndfile1-dev libgd-dev libboost-filesystem-dev \
+    libboost-program-options-dev libboost-regex-dev \
+    ca-certificates wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Скачиваем и собираем актуальную версию audiowaveform
+RUN git clone https://github.com/bbc/audiowaveform tmp/audiowaveform \
+    && cd /tmp/audiowaveform \
+    && mkdir build && cd build \
+&& cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=0 .. \
+    && make -j$(nproc)
+
+# ==========================================
 # STAGE: BASE
 # ==========================================
 FROM php:8.5-fpm AS base
@@ -8,9 +27,12 @@ ARG APP_DIR
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl git mc unzip supervisor procps \
+    ffmpeg sox \
     libcurl4-openssl-dev libxml2-dev libonig-dev libicu-dev libssl-dev libzip-dev \
     && docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=audiowaveform-builder /tmp/audiowaveform/build/audiowaveform /usr/local/bin/audiowaveform
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
@@ -77,8 +99,13 @@ ARG APP_DIR
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     mc supervisor procps \
+    ffmpeg sox \
+    libmad0 libid3tag0 libsndfile1 libgd3 \
+    libboost-filesystem1.74.0 libboost-program-options1.74.0 libboost-regex1.74.0 \
     libcurl4t64 libxml2 libonig5 libicu76 libssl3t64 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=audiowaveform-builder /tmp/audiowaveform/build/audiowaveform /usr/local/bin/audiowaveform
 
 ARG PUID=1000
 ARG PGID=1000

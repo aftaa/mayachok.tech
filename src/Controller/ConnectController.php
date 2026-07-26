@@ -2,82 +2,50 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Command\Connect\YandexConnectCommand;
+use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 
 class ConnectController extends AbstractController
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
-        private readonly TokenStorageInterface $tokenStorage,
-        private readonly RequestStack $requestStack,
-    ) {}
+        private readonly MessageBusInterface $commandBus,
+    ) {
+    }
 
-    #[Route('/connect', name: 'app_connect_index')]
+    #[Route('/connect', name: 'connect_index')]
     public function index(): Response
     {
-        return $this->render('connect/index.html.twig', [])
+        return $this->render('connect/index.html.twig');
     }
 
-    #[Route('/yandex-connect', name: 'app_auth_yandex', methods: ['POST'])]
-    public function auth(Request $request): JsonResponse
+    #[Route('/connect/yandex', name: 'connect_yandex_start')]
+    public function connectYandex(ClientRegistry $clientRegistry): RedirectResponse
     {
-        $data = json_decode($request->getContent(), true);
-
-        $email = $data['email'] ?? null;
-        $displayName = $data['displayName'] ?? 'Пользователь';
-        $avatarUrl = $data['avatarUrl'] ?? null;
-        $oauthId = $data['yandexId'] ?? null;
-
-        if (!$email) {
-            return $this->json(['error' => 'Email is required'], 400);
-        }
-
-        $user = $this->userRepository->findOneBy(['email' => $email]);
-
-        if (!$user) {
-            $user = new User();
-            $user->setEmail($email);
-            $user->setDisplayName($displayName);
-            $user->setAvatarUrl($avatarUrl);
-            $user->setRoles(['ROLE_USER']);
-            $user->setOauthId($oauthId);
-            $user->setPassword('');
-
-            $this->userRepository->save($user);
-        }
-
-        $this->loginUser($user);
-
-        return $this->json([
-            'success' => true,
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'displayName' => $user->getDisplayName(),
-                'avatarUrl' => $user->getAvatarUrl(),
-            ]
-        ]);
+        return $clientRegistry
+            ->getClient('yandex_main')
+            ->redirect(['login:email']); // Запрашиваем email
     }
 
-    private function loginUser(User $user): void
+    /**
+     * @throws ExceptionInterface
+     */
+    #[Route('/connect/yandex/check', name: 'connect_yandex_check')]
+    public function connectYandexCheck(): RedirectResponse
     {
-        $token = new UsernamePasswordToken(
-            $user,
-            'main',
-            $user->getRoles()
-        );
+        try {
+            $this->commandBus->dispatch(new YandexConnectCommand());
 
-        $this->tokenStorage->setToken($token);
-        $this->requestStack->getSession()->set('_security_main', serialize($token));
+            return $this->redirectToRoute('app_index');
+        } catch (RuntimeException) {
+            return $this->redirectToRoute('connect_index');
+        }
     }
 
     #[Route('/logout', name: 'app_logout')]

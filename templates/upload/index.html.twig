@@ -1,0 +1,124 @@
+{# templates/mix/upload.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Загрузить микс</h1>
+
+        <div class="card p-4">
+            <form action="{{ url('app_upload_upload') }}" id="upload-form" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="mixFile" class="form-label">Выберите файл</label>
+                    <input type="file" class="form-control" id="mixFile" name="file" accept=".mp3,.flac,.wav,.aiff" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="title" class="form-label">Название микса</label>
+                    <input type="text" class="form-control" id="title" name="title" placeholder="Например: Summer Mix 2026" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="artist" class="form-label">Артист</label>
+                    <input type="text" class="form-control" id="artist" name="artist" placeholder="Имя диджея или группы" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="uploadBtn">Загрузить</button>
+            </form>
+
+            <!-- Прогресс-бар -->
+            <div id="progress-wrapper" class="mt-4" style="display: none;">
+                <div class="d-flex justify-content-between">
+                    <span id="progress-label">Загрузка...</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress" style="height: 20px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                         role="progressbar"
+                         style="width: 0%;"
+                         aria-valuenow="0"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        0%
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-message" class="mt-3"></div>
+        </div>
+    </div>
+    <script>
+        // assets/upload.js (или встроить в шаблон)
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('upload-form');
+            const fileInput = document.getElementById('mixFile');
+            const progressWrapper = document.getElementById('progress-wrapper');
+            const progressBar = document.getElementById('progress-bar');
+            const progressLabel = document.getElementById('progress-label');
+            const progressPercent = document.getElementById('progress-percent');
+            const resultMessage = document.getElementById('result-message');
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const file = fileInput.files[0];
+                if (!file) {
+                    resultMessage.innerHTML = '<div class="alert alert-warning">Выберите файл</div>';
+                    return;
+                }
+
+                const formData = new FormData(form);
+
+                // Показываем прогресс
+                progressWrapper.style.display = 'block';
+                resultMessage.innerHTML = '';
+
+                const xhr = new XMLHttpRequest();
+
+                // Отслеживаем прогресс загрузки
+                xhr.upload.addEventListener('progress', function (event) {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressBar.textContent = percent + '%';
+                        progressPercent.textContent = percent + '%';
+                        progressLabel.textContent = 'Загрузка...';
+                    }
+                });
+
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            progressBar.style.width = '100%';
+                            progressBar.textContent = '100%';
+                            progressPercent.textContent = '100%';
+                            progressLabel.textContent = '✅ Готово!';
+                            resultMessage.innerHTML = '<div class="alert alert-success">Файл загружен!</div>';
+                        } catch (e) {
+                            resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка при обработке ответа</div>';
+                        }
+                    } else {
+                        let message = '';
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) {
+                            message = response.message;
+                        } else if (response.error) {
+                            message = response.error;
+                        }
+
+                        resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка загрузки: ' + message + '</div>';
+                    }
+                };
+
+                xhr.onerror = function () {
+                    resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка сети</div>';
+                };
+
+                xhr.open('POST', '{{ url('app_upload_upload') }}');
+                xhr.send(formData);
+            });
+        });
+    </script>
+{% endblock %}

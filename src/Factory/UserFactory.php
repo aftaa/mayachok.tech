@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Factory;
+
+use Aego\OAuth2\Client\Provider\YandexResourceOwner;
+use App\Entity\User;
+use DateTimeImmutable;
+
+class UserFactory
+{
+    public function fromYandexResourceOwner(YandexResourceOwner $resourceOwner): User
+    {
+        $owner = $resourceOwner->toArray();
+        $avatarUrl = $owner['is_avatar_empty']
+            ? ''
+            : sprintf('https://avatars.yandex.net/get-yapic/%s/islands-100', $owner['default_avatar_id']);
+
+        try {
+            $birthday = new DateTimeImmutable($owner['birthday']);
+        } catch (\DateMalformedStringException $e) {
+            $birthday = null;
+        }
+
+        $user = new User();
+        $user->setEmail($yandexUser->getEmail());
+        $user->setDisplayName($yandexUser->getNickname());
+        $user->setAvatarUrl($avatarUrl);
+        $user->setBirthday($birthday);
+        $user->setRoles(['ROLE_USER']);
+        $user->setOauthId($yandexUser->getId());
+        $user->setPassword('');
+
+        return $user;
+    }
+}
