@@ -24,11 +24,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('app_upload') }}">Upload</a>
                 </li>
+{#                <li class="nav-item">#}
+{#                    <a class="nav-link" href="{{ url('app_logout') }}">Profile</a>#}
+{#                </li>#}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url('app_logout') }}">Profile</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('app_logout') }}">Logout</a>
+                    <a class="nav-link" href="{{ url('app_logout') }}" onclick="return confirm('Уверены?');">Logout</a>
                 </li>
             {% endif %}
 

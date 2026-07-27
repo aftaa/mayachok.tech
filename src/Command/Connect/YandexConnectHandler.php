@@ -57,6 +57,7 @@ readonly class YandexConnectHandler
 
         $this->tokenStorage->setToken($token);
         $this->requestStack->getSession()->set('_security_main', serialize($token));
+        $this->requestStack->getSession()->save();
     }
 
 }

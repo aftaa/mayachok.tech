@@ -4,6 +4,7 @@ namespace App\MessageHandler;
 
 use App\Message\ProcessMixMessage;
 use App\Repository\MixRepository;
+use App\Service\S3Uploader;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Mercure\HubInterface;
@@ -18,6 +19,7 @@ final readonly class ProcessMixHandler
         private LoggerInterface $logger,
         private HubInterface $hub,
         private ParameterBagInterface $parameterBag,
+        private S3Uploader $s3Uploader,
     ) {
     }
     public function __invoke(ProcessMixMessage $message): void
@@ -57,15 +59,47 @@ final readonly class ProcessMixHandler
             $peaksPath = $this->generatePeaks($mp3Path);
 
             $mix->setDuration($duration);
-            $mix->setIsProcessed(true);
             $this->repository->save($mix);
 
            $this->success($mix->getId(),'Анализ микса завершен', 40);
 
+            $this->s3Uploader->upload(
+                'originals/' . basename($filename),
+                $filename
+            );
+
+            $this->success($mix->getId(),'Загрузка в облако', 60);
+
+
+            if (!$this->isMp3($filename)) {
+                $this->s3Uploader->upload(
+                    'mp3/' . basename($mp3Path),
+                    $mp3Path
+                );
+            }
+
+            $this->success($mix->getId(),'Загрузка в облако', 80);
+
+            $this->s3Uploader->upload(
+                'peaks/' . basename($peaksPath),
+                $peaksPath
+            );
+
+            // Обновляем Mix
+            $mix->setS3OriginalKey('originals/' . basename($filename));
+            $mix->setS3StreamKey('mp3/' . basename($mp3Path));
+            $mix->setPeaksKey('peaks/' . basename($peaksPath));
+            $mix->setIsProcessed(true);
+            $this->repository->save($mix);
+
             // Чистим временные файлы
-//            unlink($filename);
-//            unlink($mp3Path);
-//            unlink($peaksPath);
+            unlink($filename);
+            if ($filename !== $mp3Path) {
+                unlink($mp3Path);
+            }
+            unlink($peaksPath);
+
+            $this->success($mix->getId(),'Микс обработан и загружен', 100);
         } catch (\Throwable $e) {
             $this->error($message->mixId, 'Ошибка анализа микса: ' . $e->getMessage());
         }

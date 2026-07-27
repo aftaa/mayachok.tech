@@ -10,6 +10,7 @@ services:
         depends_on:
             php:
                 condition: service_started
+
     php:
         build:
             context: .
@@ -29,24 +30,35 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
+
     mysql:
         image: mysql:9.7.1
         ports:
-            - "49021:3306"
+            - 49021:3306
         volumes:
-            - ./docker/mysql/data:/var/lib/mysql
-            - ./docker/mysql/logs:/var/log/mysql
+            - mysql_data:/var/lib/mysql
             - ./docker/mysql/init:/docker-entrypoint-initdb.d
         environment:
             MYSQL_ROOT_PASSWORD: root
             MYSQL_DATABASE: tech
             MYSQL_USER: tech
             MYSQL_PASSWORD: tech
+            command: >
+                --innodb_buffer_pool_size=4G
+                --innodb_buffer_pool_instances=16
+                --innodb_flush_log_at_trx_commit=2
+                --innodb_doublewrite=0
+                --performance_schema=0
+                --skip-name-resolve
+                --max_binlog_size=100M
+                --binlog_expire_logs_seconds=86400
         healthcheck:
-            test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot" ]
-            timeout: 3s
-            retries: 15
-            start_period: 1s
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
+            interval: 2s
+            timeout: 2s
+            retries: 10
+            start_period: 15s
+
     mercure:
         image: dunglas/mercure
         environment:
@@ -60,3 +72,18 @@ services:
                 subscriptions 1
         ports:
             - "49022:80"
+
+    redis:
+        image: redis:8.6-alpine3.23
+        ports:
+            - "49023:6379"
+        volumes:
+            - ./docker/redis/data:/data
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            timeout: 10s
+            retries: 5
+            start_period: 5s
+
+volumes:
+    mysql_data:

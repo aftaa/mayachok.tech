@@ -106,3 +106,124 @@ main {
 #menu-avatar {
     border-radius: 15px;
 }
+
+// ===== ROOT =====
+:root {
+    --color-bg: #0f0f1a;
+    --color-card: #1a1a2e;
+    --color-border: #2a2a3e;
+    --color-text: #f0f0f5;
+    --color-subtext: #a0a0b8;
+    --color-primary: #6c63ff;
+    --color-yandex: #fc3f1d;
+    --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --color-bg: #f5f5fa;
+        --color-card: #ffffff;
+        --color-border: #e0e0e8;
+        --color-text: #1a1a2e;
+        --color-subtext: #555570;
+        --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.08);
+    }
+}
+
+// ===== AUTH =====
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: 1.5rem;
+    background: var(--color-bg);
+}
+
+.auth-card {
+    max-width: 420px;
+    width: 100%;
+    padding: 2.5rem 2rem;
+    background: var(--color-card);
+    border-radius: 24px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+    text-align: center;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.25rem;
+}
+
+.auth-subtitle {
+    font-size: 0.95rem;
+    color: var(--color-subtext);
+    margin-bottom: 2rem;
+}
+
+.auth-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.auth-btn-yandex {
+    background: var(--color-yandex);
+    color: #fff;
+}
+
+.auth-btn-yandex:hover {
+    background: #d9341a;
+    color: #fff;
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(252, 63, 29, 0.35);
+}
+
+.auth-btn-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.auth-footer {
+    margin-top: 1.75rem;
+    font-size: 0.8rem;
+    color: var(--color-subtext);
+}
+
+.auth-footer a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+.auth-btn-google {
+    background: #ffffff;
+    color: #1a1a2e;
+    border: 1px solid #d0d0d8;
+}
+
+.auth-btn-google:hover {
+    background: #f5f5fa;
+    color: #1a1a2e;
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}

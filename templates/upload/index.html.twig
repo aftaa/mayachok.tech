@@ -46,7 +46,7 @@
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        const callback = function () {
             const form = document.getElementById('upload-form');
             const fileInput = document.getElementById('mixFile');
             const progressWrapper = document.getElementById('progress-wrapper');
@@ -157,6 +157,8 @@
                 xhr.open('POST', '{{ url('app_upload_upload') }}');
                 xhr.send(formData);
             });
-        });
+        };
+        //document.addEventListener('DOMContentLoaded', callback);
+        document.addEventListener('turbo:load', callback);
     </script>
 {% endblock %}
