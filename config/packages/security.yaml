@@ -20,7 +20,10 @@ security:
             lazy: true
             provider: app_user_provider
 
-            # Activate different ways to authenticate:
+#            custom_authenticators: []
+            form_login: ~
+
+    # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall
 
             # https://symfony.com/doc/current/security/impersonating_user.html

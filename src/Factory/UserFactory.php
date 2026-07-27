@@ -4,6 +4,7 @@ namespace App\Factory;
 
 use Aego\OAuth2\Client\Provider\YandexResourceOwner;
 use App\Entity\User;
+use DateTime;
 use DateTimeImmutable;
 
 class UserFactory
@@ -13,11 +14,11 @@ class UserFactory
         $owner = $resourceOwner->toArray();
         $avatarUrl = $owner['is_avatar_empty']
             ? ''
-            : sprintf('https://avatars.yandex.net/get-yapic/%s/islands-100', $owner['default_avatar_id']);
+            : sprintf('https://avatars.yandex.net/get-yapic/%s/islands-retina-50', $owner['default_avatar_id']);
 
         try {
-            $birthday = new DateTimeImmutable($owner['birthday']);
-        } catch (\DateMalformedStringException $e) {
+            $birthday = new DateTime($owner['birthday']);
+        } catch (\DateMalformedStringException|\Exception $e) {
             $birthday = null;
         }
 

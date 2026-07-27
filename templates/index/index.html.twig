@@ -1,5 +1,332 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}Музыкальные миксы{% endblock %}
+
 {% block body %}
-    index
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">🎵 Миксы</h1>
+            {% if app.user %}
+                <a href="{{ path('app_upload') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Загрузить микс
+                </a>
+            {% endif %}
+        </div>
+
+        {% if mixes is empty %}
+            <div class="text-center py-5">
+                <div class="display-1 mb-3">🎧</div>
+                <h3>Пока нет миксов</h3>
+                <p class="text-muted">Будьте первым, кто загрузит свой микс!</p>
+                {% if app.user %}
+                    <a href="{{ path('app_upload') }}" class="btn btn-primary mt-3">Загрузить микс</a>
+                {% else %}
+                    <a href="{{ path('connect_index') }}" class="btn btn-primary mt-3">Войти чтобы загрузить</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="row g-3">
+                {% for mix in mixes %}
+                    <div class="col-12" data-turbo="false">
+                        <div class="card mix-card h-100 shadow-sm">
+                            <div class="row g-0 h-100">
+                                {# Обложка #}
+                                <div class="col-md-3 col-lg-2 mix-cover-wrapper">
+                                    <div class="mix-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <div class="mix-cover-content">
+                                            <span class="mix-cover-icon">🎵</span>
+                                            <span class="mix-duration">{{ mix.duration|default(0)|date('i:s') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {# Информация #}
+                                <div class="col-md-9 col-lg-10">
+                                    <div class="card-body d-flex flex-column h-100">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h5 class="card-title mb-1">
+                                                    <a href="#" class="text-decoration-none text-dark">
+                                                        {{ mix.title }}
+                                                    </a>
+                                                </h5>
+                                                <p class="card-text text-muted mb-2">
+                                                    <i class="bi bi-person"></i> {{ mix.artist }}
+                                                </p>
+                                            </div>
+                                            <div class="ms-2">
+                                                <button class="btn btn-sm btn-outline-primary play-btn"
+                                                        data-mix-id="{{ mix.id }}">
+                                                    <i class="bi bi-play-circle-fill"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {# ВОЛНА - вместо заглушки #}
+                                        <div class="mt-auto">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock"></i>
+                                                    {{ mix.duration|default(0)|date('i:s') }}
+                                                </small>
+                                                <div class="mix-controls">
+                                                    <button class="btn btn-sm btn-link text-muted p-0 me-2 like-btn"
+                                                            data-mix-id="{{ mix.id }}">
+                                                        <i class="bi bi-heart"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-link text-muted p-0 share-btn"
+                                                            data-mix-id="{{ mix.id }}">
+                                                        <i class="bi bi-share"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {# Реальная волна #}
+                                            <div id="waveform-{{ mix.id }}"
+                                                 class="waveform-container"
+                                                 data-audio-url="{{ mix.s3StreamUrl }}"
+                                                 data-peaks-url="{{ mix.s3PeaksUrl }}"
+                                                 data-mix-id="{{ mix.id }}"
+                                                 data-processed="{{ mix.isProcessed ? 'true' : 'false' }}">
+                                                {% if not mix.isProcessed %}
+                                                    <div class="text-center text-muted py-2">
+                                                        <small>⏳ Обработка...</small>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .mix-card {
+            transition: all 0.3s ease;
+            border: 1px solid var(--color-border);
+            background: var(--color-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .mix-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+
+        .mix-cover-wrapper {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .mix-cover {
+            width: 100%;
+            height: 100%;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .mix-cover-content {
+            text-align: center;
+            color: white;
+        }
+
+        .mix-cover-icon {
+            font-size: 3rem;
+            display: block;
+        }
+
+        .mix-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .play-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.2rem;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .waveform-container {
+            min-height: 40px;
+            background: rgba(108, 99, 255, 0.05);
+            border-radius: 8px;
+            padding: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .waveform-container:hover {
+            background: rgba(108, 99, 255, 0.1);
+        }
+
+        .waveform-container .wavesurfer-container {
+            min-height: 40px !important;
+        }
+
+        .waveform-container.playing .wavesurfer-progress {
+            background: linear-gradient(90deg, #6c63ff, #764ba2);
+        }
+
+        .mix-controls .btn-link {
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .mix-controls .btn-link:hover {
+            color: #6c63ff !important;
+            transform: scale(1.1);
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module">
+        import WaveSurfer from 'wavesurfer.js';
+
+        console.log('✅ WaveSurfer импортирован:', typeof WaveSurfer);
+
+        function initWaveforms() {
+            console.log('🎵 Инициализация волн...');
+            const containers = document.querySelectorAll('.waveform-container');
+            console.log(`📦 Найдено контейнеров: ${containers.length}`);
+
+            containers.forEach((container, index) => {
+                const mixId = container.dataset.mixId;
+                const audioUrl = container.dataset.audioUrl;
+                const peaksUrl = container.dataset.peaksUrl;
+                const isProcessed = container.dataset.processed === 'true';
+
+                console.log(`🔍 Микс #${mixId}: processed=${isProcessed}, audio=${!!audioUrl}`);
+
+                if (!isProcessed || !audioUrl) {
+                    console.warn(`⚠️ Микс #${mixId} пропущен`);
+                    return;
+                }
+
+                // Очищаем контейнер перед инициализацией
+                container.innerHTML = '';
+
+                try {
+                    console.log(`🎵 Создаем волну для микса #${mixId}`);
+
+                    const ws = WaveSurfer.create({
+                        container: container, // Передаем DOM-элемент, а не селектор
+                        waveColor: '#6c63ff',
+                        progressColor: '#4a3fbf',
+                        cursorColor: '#ff6b6b',
+                        barWidth: 2,
+                        barGap: 1,
+                        barRadius: 3,
+                        height: 50,
+                        normalize: true,
+                        backend: 'MediaElement',
+                        mediaControls: false,
+                        interact: true,
+                        dragToSeek: true,
+                    });
+
+                    console.log(`📡 Загружаем аудио: ${audioUrl}`);
+
+                    // Загружаем с пиками или без
+                    if (peaksUrl) {
+                        fetch(peaksUrl)
+                            .then(response => {
+                                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log(`✅ Пики загружены для #${mixId}`);
+                                if (data.data && data.length) {
+                                    ws.load(audioUrl, data.data, data.length);
+                                } else {
+                                    ws.load(audioUrl);
+                                }
+                            })
+                            .catch(err => {
+                                console.warn(`⚠️ Ошибка загрузки пиков #${mixId}:`, err);
+                                ws.load(audioUrl);
+                            });
+                    } else {
+                        ws.load(audioUrl);
+                    }
+
+                    container._wavesurfer = ws;
+
+                    ws.on('ready', () => {
+                        console.log(`✅ Волна готова для #${mixId}`);
+                    });
+
+                    ws.on('play', () => {
+                        container.classList.add('playing');
+                    });
+
+                    ws.on('pause', () => {
+                        container.classList.remove('playing');
+                    });
+
+                } catch (error) {
+                    console.error(`❌ Ошибка для микса #${mixId}:`, error);
+                    container.innerHTML = `<div class="text-danger p-2">⚠️ Ошибка загрузки</div>`;
+                }
+            });
+        }
+
+        // Для Turbo используем turbo:load
+        document.addEventListener('turbo:load', function() {
+            console.log('🔄 Turbo загружен, инициализируем волны');
+            // Небольшая задержка для рендеринга DOM
+            setTimeout(initWaveforms, 100);
+        });
+
+        // Также на всякий случай для обычной загрузки
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM загружен, инициализируем волны');
+            setTimeout(initWaveforms, 100);
+        });
+
+        // Обработчик для кнопки воспроизведения
+        document.addEventListener('click', function(e) {
+            const playBtn = e.target.closest('.play-btn');
+            if (playBtn) {
+                e.preventDefault();
+                const mixId = playBtn.dataset.mixId;
+                const container = document.querySelector(`#waveform-${mixId}`);
+
+                if (container && container._wavesurfer) {
+                    container._wavesurfer.playPause();
+                } else {
+                    console.warn(`⚠️ Плеер для #${mixId} не найден`);
+                }
+            }
+        });
+    </script>
 {% endblock %}

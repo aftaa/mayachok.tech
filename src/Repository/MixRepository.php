@@ -33,4 +33,12 @@ class MixRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    /**
+     * @return list<Mix>
+     */
+    public function getAll(): array
+    {
+        return $this->findAll();
+    }
 }

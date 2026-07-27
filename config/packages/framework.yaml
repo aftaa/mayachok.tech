@@ -7,10 +7,10 @@ framework:
         default_redis_provider: '%env(REDIS_URL)%/1'
 
     session:
-        # Для сессий используем чистый DSN (без приставки session:)
         handler_id: '%env(REDIS_URL)%/0'
         cookie_lifetime: 86400
         gc_maxlifetime: 86400
+        storage_factory_id: session.storage.factory.native
 
     trusted_proxies: '127.0.0.1,REMOTE_ADDR'
     trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
