@@ -22,12 +22,12 @@ class UserFactory
         }
 
         $user = new User();
-        $user->setEmail($yandexUser->getEmail());
-        $user->setDisplayName($yandexUser->getNickname());
+        $user->setEmail($resourceOwner->getEmail());
+        $user->setDisplayName($resourceOwner->getNickname());
         $user->setAvatarUrl($avatarUrl);
         $user->setBirthday($birthday);
         $user->setRoles(['ROLE_USER']);
-        $user->setOauthId($yandexUser->getId());
+        $user->setOauthId($resourceOwner->getId());
         $user->setPassword('');
 
         return $user;

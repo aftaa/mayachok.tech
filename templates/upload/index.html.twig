@@ -1,5 +1,3 @@
-{# templates/mix/upload.html.twig #}
-
 {% extends 'base.html.twig' %}
 
 {% block body %}
@@ -48,8 +46,6 @@
         </div>
     </div>
     <script>
-        // assets/upload.js (или встроить в шаблон)
-
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('upload-form');
             const fileInput = document.getElementById('mixFile');
@@ -58,6 +54,41 @@
             const progressLabel = document.getElementById('progress-label');
             const progressPercent = document.getElementById('progress-percent');
             const resultMessage = document.getElementById('result-message');
+
+            function subscribeToProgress(mixId) {
+                const eventSource = new EventSource(`/.well-known/mercure?topic=mix/progress/${mixId}`);
+
+                eventSource.onmessage = function (event) {
+                    const data = JSON.parse(event.data);
+
+                    if (data.error) {
+                        progressLabel.textContent = '❌ ' + data.status;
+                        progressBar.className = 'progress-bar bg-danger';
+                        progressBar.textContent = '0%';
+                        progressPercent.textContent = '0%';
+                        resultMessage.innerHTML = `<div class="alert alert-danger">${data.status}</div>`;
+                        eventSource.close();
+                        return;
+                    }
+
+                    const percent = data.progress || 0;
+                    progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+                    progressBar.style.width = percent + '%';
+                    progressBar.textContent = percent + '%';
+                    progressPercent.textContent = percent + '%';
+                    progressLabel.textContent = data.status || 'Обработка...';
+
+                    if (percent >= 100) {
+                        progressLabel.textContent = '✅ Готово!';
+                        resultMessage.innerHTML = '<div class="alert alert-success">Микс обработан!</div>';
+                        eventSource.close();
+                    }
+                };
+
+                eventSource.onerror = function () {
+                    console.warn('Mercure connection error, retrying...');
+                };
+            }
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -69,17 +100,16 @@
                 }
 
                 const formData = new FormData(form);
-
-                // Показываем прогресс
                 progressWrapper.style.display = 'block';
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
                 resultMessage.innerHTML = '';
 
                 const xhr = new XMLHttpRequest();
 
-                // Отслеживаем прогресс загрузки
                 xhr.upload.addEventListener('progress', function (event) {
                     if (event.lengthComputable) {
                         const percent = Math.round((event.loaded / event.total) * 100);
+                        progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
                         progressBar.style.width = percent + '%';
                         progressBar.textContent = percent + '%';
                         progressPercent.textContent = percent + '%';
@@ -91,28 +121,36 @@
                     if (xhr.status === 200) {
                         try {
                             const response = JSON.parse(xhr.responseText);
-                            progressBar.style.width = '100%';
-                            progressBar.textContent = '100%';
-                            progressPercent.textContent = '100%';
-                            progressLabel.textContent = '✅ Готово!';
-                            resultMessage.innerHTML = '<div class="alert alert-success">Файл загружен!</div>';
+                            if (response.success && response.mixId) {
+                                // Сброс на 0% и переключение на обработку
+                                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+                                progressBar.style.width = '0%';
+                                progressBar.textContent = '0%';
+                                progressPercent.textContent = '0%';
+                                progressLabel.textContent = '⏳ Обработка...';
+
+                                resultMessage.innerHTML = '<div class="alert alert-info">Файл загружен, идёт обработка...</div>';
+                                subscribeToProgress(response.mixId);
+                            }
                         } catch (e) {
+                            progressBar.className = 'progress-bar bg-danger';
                             resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка при обработке ответа</div>';
                         }
                     } else {
                         let message = '';
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.message) {
-                            message = response.message;
-                        } else if (response.error) {
-                            message = response.error;
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            message = response.message || response.error || 'Ошибка загрузки';
+                        } catch (e) {
+                            message = 'Ошибка загрузки: ' + xhr.status;
                         }
-
-                        resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка загрузки: ' + message + '</div>';
+                        progressBar.className = 'progress-bar bg-danger';
+                        resultMessage.innerHTML = `<div class="alert alert-danger">${message}</div>`;
                     }
                 };
 
                 xhr.onerror = function () {
+                    progressBar.className = 'progress-bar bg-danger';
                     resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка сети</div>';
                 };
 

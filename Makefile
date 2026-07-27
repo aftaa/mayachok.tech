@@ -19,6 +19,11 @@ logs:
 bash:
 	docker compose exec -u appuser php bash
 
+restart-workers:
+	@echo "🔄 Restarting Messenger workers..."
+	docker compose exec php supervisorctl restart messenger:*
+	@echo "✅ Workers restarted"
+
 # ============================================
 # PROD
 # ============================================

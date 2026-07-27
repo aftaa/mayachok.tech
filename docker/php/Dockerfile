@@ -27,7 +27,7 @@ ARG APP_DIR
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl git mc unzip supervisor procps \
-    ffmpeg sox \
+    ffmpeg sox libgd-dev \
     libcurl4-openssl-dev libxml2-dev libonig-dev libicu-dev libssl-dev libzip-dev \
     && docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
