@@ -56,13 +56,17 @@
                                             </div>
                                             <div class="ms-2">
                                                 <button class="btn btn-sm btn-outline-primary play-btn"
-                                                        data-mix-id="{{ mix.id }}">
+                                                        data-mix-id="{{ mix.id }}"
+                                                        data-audio-url="{{ mix.s3StreamUrl }}"
+                                                        data-peaks-url="{{ mix.s3PeaksUrl }}"
+                                                        data-title="{{ mix.title }}"
+                                                        data-artist="{{ mix.artist }}">
                                                     <i class="bi bi-play-circle-fill"></i>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {# ВОЛНА - вместо заглушки #}
+                                        {# ВОЛНА #}
                                         <div class="mt-auto">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <small class="text-muted">
@@ -210,22 +214,24 @@
 {% block javascripts %}
     {{ parent() }}
     <script type="module">
+        // Просто импортируем по имени пакета (как в importmap)
         import WaveSurfer from 'wavesurfer.js';
 
-        console.log('✅ WaveSurfer импортирован:', typeof WaveSurfer);
+        console.log('✅ WaveSurfer загружен:', typeof WaveSurfer);
+
+        // Получаем доступ к глобальному плееру
+        // Он уже создан в player.js
 
         function initWaveforms() {
-            console.log('🎵 Инициализация волн...');
+            console.log('🎵 Инициализация волн на главной...');
             const containers = document.querySelectorAll('.waveform-container');
             console.log(`📦 Найдено контейнеров: ${containers.length}`);
 
-            containers.forEach((container, index) => {
+            containers.forEach((container) => {
                 const mixId = container.dataset.mixId;
                 const audioUrl = container.dataset.audioUrl;
                 const peaksUrl = container.dataset.peaksUrl;
                 const isProcessed = container.dataset.processed === 'true';
-
-                console.log(`🔍 Микс #${mixId}: processed=${isProcessed}, audio=${!!audioUrl}`);
 
                 if (!isProcessed || !audioUrl) {
                     console.warn(`⚠️ Микс #${mixId} пропущен`);
@@ -239,7 +245,7 @@
                     console.log(`🎵 Создаем волну для микса #${mixId}`);
 
                     const ws = WaveSurfer.create({
-                        container: container, // Передаем DOM-элемент, а не селектор
+                        container: container,
                         waveColor: '#6c63ff',
                         progressColor: '#4a3fbf',
                         cursorColor: '#ff6b6b',
@@ -293,6 +299,12 @@
                         container.classList.remove('playing');
                     });
 
+                    // Синхронизация с глобальным плеером
+                    // Если глобальный плеер играет этот трек - подсвечиваем
+                    if (window.player && window.player.trackId == mixId && window.player.isPlaying) {
+                        container.classList.add('playing');
+                    }
+
                 } catch (error) {
                     console.error(`❌ Ошибка для микса #${mixId}:`, error);
                     container.innerHTML = `<div class="text-danger p-2">⚠️ Ошибка загрузки</div>`;
@@ -300,20 +312,18 @@
             });
         }
 
-        // Для Turbo используем turbo:load
+        // Инициализация при загрузке
         document.addEventListener('turbo:load', function() {
             console.log('🔄 Turbo загружен, инициализируем волны');
-            // Небольшая задержка для рендеринга DOM
             setTimeout(initWaveforms, 100);
         });
 
-        // Также на всякий случай для обычной загрузки
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📄 DOM загружен, инициализируем волны');
             setTimeout(initWaveforms, 100);
         });
 
-        // Обработчик для кнопки воспроизведения
+        // Обработчик для кнопок воспроизведения - использует глобальный плеер
         document.addEventListener('click', function(e) {
             const playBtn = e.target.closest('.play-btn');
             if (playBtn) {
@@ -321,10 +331,24 @@
                 const mixId = playBtn.dataset.mixId;
                 const container = document.querySelector(`#waveform-${mixId}`);
 
-                if (container && container._wavesurfer) {
+                // Используем глобальный плеер
+                if (window.player) {
+                    // Если уже играет этот трек - пауза
+                    if (window.player.trackId == mixId && window.player.isPlaying) {
+                        window.player.pause();
+                    } else {
+                        // Иначе загружаем новый трек
+                        const audioUrl = playBtn.dataset.audioUrl;
+                        const peaksUrl = playBtn.dataset.peaksUrl || null;
+                        const title = playBtn.dataset.title || 'Без названия';
+                        const artist = playBtn.dataset.artist || 'Неизвестный исполнитель';
+
+                        window.player.loadTrack(mixId, audioUrl, peaksUrl, title, artist);
+                        setTimeout(() => window.player.play(), 100);
+                    }
+                } else if (container && container._wavesurfer) {
+                    // Fallback: если глобального плеера нет, используем локальный
                     container._wavesurfer.playPause();
-                } else {
-                    console.warn(`⚠️ Плеер для #${mixId} не найден`);
                 }
             }
         });

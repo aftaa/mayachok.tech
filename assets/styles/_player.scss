@@ -1,0 +1,76 @@
+// assets/styles/app.scss
+
+.player {
+    background: #1a1a2e !important;
+    border-top: 2px solid #6c63ff;
+    padding: 8px 0 !important;
+
+    .player-cover {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        .player-cover-icon {
+            font-size: 1.2rem;
+        }
+    }
+
+    .player-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #6c63ff;
+        border: none;
+        transition: all 0.2s ease;
+
+        &:hover {
+            transform: scale(1.1);
+            background: #5a52e0;
+        }
+
+        i {
+            font-size: 1.2rem;
+        }
+    }
+
+    .player-waveform {
+        height: 40px;
+        cursor: pointer;
+        background: rgba(108, 99, 255, 0.05);
+        border-radius: 4px;
+
+        .wavesurfer-container {
+            height: 40px !important;
+        }
+    }
+
+    #player-time, #player-duration {
+        font-size: 0.7rem;
+        color: #888;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+@media (max-width: 768px) {
+    .player {
+        .player-cover {
+            width: 30px;
+            height: 30px;
+        }
+
+        .player-btn {
+            width: 30px;
+            height: 30px;
+        }
+
+        .player-waveform {
+            height: 30px;
+        }
+    }
+}

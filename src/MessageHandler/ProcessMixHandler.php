@@ -25,84 +25,70 @@ final readonly class ProcessMixHandler
     public function __invoke(ProcessMixMessage $message): void
     {
         $this->logger->info('Начинаем обработку микса №' . $message->mixId);
-
-        // 1. Найти Mix
-        // 2. Сконвертировать в MP3 (ffmpeg)
-        // 3. Загрузить оригинал + MP3 + peaks в S3
-        // 4. Обновить поля в Mix и сохранить
-        // 5. Удалить временные файлы
-        // 6. Отправить Mercure-уведомление о готовности
+        $this->success($message->mixId, '🚀 Начинаем обработку', 5);
 
         $mix = $this->repository->find($message->mixId);
-
         if (null === $mix) {
-            $this->error($message->mixId, 'Микс не найден в БД, номер микса ' . $message->mixId);
-
+            $this->error($message->mixId, 'Микс не найден в БД');
             return;
         }
 
         $filename = $this->parameterBag->get('kernel.project_dir') . $mix->getOriginalPath();
         if (!file_exists($filename)) {
-            $this->error($message->mixId, 'Файл не найден' . $message->filename);
-
+            $this->error($message->mixId, 'Файл не найден: ' . $message->filename);
             return;
         }
 
-        [$success, $mp3Path] = $this->convertToMp3($filename);
+        // Шаг 1: Конвертация (15% → 30%)
+        $this->success($message->mixId, '⏳ Подготовка к конвертации...', 10);
+        [$success, $mp3Path] = $this->convertToMp3($filename, $message->mixId);
         if (!$success) {
             return;
         }
-        $this->success($mix->getId(), 'Конвертация прошла успешно', 20);
 
+        // Шаг 2: Анализ (30% → 50%)
         try {
+            $this->success($message->mixId, '⏳ Подготовка к анализу...', 35);
             $duration = $this->getDuration($mp3Path);
-            $peaksPath = $this->generatePeaks($mp3Path);
-
             $mix->setDuration($duration);
             $this->repository->save($mix);
 
-           $this->success($mix->getId(),'Анализ микса завершен', 40);
-
-            $this->s3Uploader->upload(
-                'originals/' . basename($filename),
-                $filename
-            );
-
-            $this->success($mix->getId(),'Загрузка в облако', 60);
-
-
-            if (!$this->isMp3($filename)) {
-                $this->s3Uploader->upload(
-                    'mp3/' . basename($mp3Path),
-                    $mp3Path
-                );
-            }
-
-            $this->success($mix->getId(),'Загрузка в облако', 80);
-
-            $this->s3Uploader->upload(
-                'peaks/' . basename($peaksPath),
-                $peaksPath
-            );
-
-            // Обновляем Mix
-            $mix->setS3OriginalKey('originals/' . basename($filename));
-            $mix->setS3StreamKey('mp3/' . basename($mp3Path));
-            $mix->setPeaksKey('peaks/' . basename($peaksPath));
-            $mix->setIsProcessed(true);
-            $this->repository->save($mix);
-
-            // Чистим временные файлы
-            unlink($filename);
-            if ($filename !== $mp3Path) {
-                unlink($mp3Path);
-            }
-            unlink($peaksPath);
-
-            $this->success($mix->getId(),'Микс обработан и загружен', 100);
+            $peaksPath = $this->generatePeaks($mp3Path, $message->mixId);
+            $this->success($message->mixId, '✅ Анализ завершен, загружаем в облако', 55);
         } catch (\Throwable $e) {
-            $this->error($message->mixId, 'Ошибка анализа микса: ' . $e->getMessage());
+            $this->error($message->mixId, 'Ошибка анализа: ' . $e->getMessage());
+            return;
         }
+
+        // Шаг 3: Загрузка в S3 (55% → 90%)
+        $this->success($message->mixId, '⏳ Загрузка оригинала...', 60);
+        $this->s3Uploader->upload('originals/' . basename($filename), $filename);
+
+        if (!$this->isMp3($filename)) {
+            $this->success($message->mixId, '⏳ Загрузка MP3...', 70);
+            $this->s3Uploader->upload('mp3/' . basename($mp3Path), $mp3Path);
+        }
+
+        $this->success($message->mixId, '⏳ Загрузка данных волны...', 80);
+        $this->s3Uploader->upload('peaks/' . basename($peaksPath), $peaksPath);
+
+        // Шаг 4: Обновление БД (90% → 100%)
+        $this->success($message->mixId, '⏳ Сохранение данных...', 90);
+
+        $mix->setS3OriginalKey('originals/' . basename($filename));
+        $mix->setS3StreamKey('mp3/' . basename($mp3Path));
+        $mix->setPeaksKey('peaks/' . basename($peaksPath));
+        $mix->setIsProcessed(true);
+        $this->repository->save($mix);
+
+        // Шаг 5: Очистка
+        unlink($filename);
+        if ($filename !== $mp3Path) {
+            unlink($mp3Path);
+        }
+        unlink($peaksPath);
+
+        $this->success($message->mixId, '✅ Микс готов! 🎵', 100);
     }
 
     /**

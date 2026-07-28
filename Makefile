@@ -1,49 +1,141 @@
 # ============================================
-# DEV
+# 🎵 MyMixes.Ru - Makefile
 # ============================================
-up:
+
+.PHONY: help assets build dev logs migrate cc test shell
+
+# По умолчанию показываем help
+.DEFAULT_GOAL := help
+
+help: ## 📚 Показать все доступные команды
+	@echo "🎵 MyMixes.Ru - доступные команды:"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+
+# ============================================
+# 🔧 Билд и ассеты
+# ============================================
+
+assets: ## 🔨 Собрать CSS и ассеты
+	docker compose exec -u appuser php bin/console sass:build
+	docker compose exec -u appuser php bin/console asset-map:compile
+
+build: ## 🏗️ Полная пересборка проекта
+	docker compose build
+	docker compose up -d
+	make assets
+
+# ============================================
+# 🐳 Docker
+# ============================================
+
+up: ## 🚀 Запустить контейнеры
 	docker compose up -d
 
-down:
+down: ## ⏹️ Остановить контейнеры
 	docker compose down
 
-build:
-	docker compose build
-
-restart:
+restart: ## 🔄 Перезапустить контейнеры
 	docker compose restart
 
-logs:
-	docker compose logs -f
+rebuild: ## ♻️ Пересобрать и перезапустить
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
+	make assets
 
-bash:
+logs: ## 📋 Посмотреть логи (всех контейнеров)
+	docker compose logs -f --tail=100
+
+log-php: ## 📋 Логи PHP
+	docker compose logs -f php --tail=50
+
+log-nginx: ## 📋 Логи Nginx
+	docker compose logs -f nginx --tail=50
+
+log-mysql: ## 📋 Логи MySQL
+	docker compose logs -f mysql --tail=50
+
+# ============================================
+# 🐘 Symfony
+# ============================================
+
+cc: ## 🧹 Очистить кэш Symfony
+	docker compose exec -u appuser php bin/console cache:clear
+
+warmup: ## 🔥 Собрать кэш (warmup)
+	docker compose exec -u appuser php bin/console cache:warmup
+
+migrate: ## 🗄️ Применить миграции
+	docker compose exec -u appuser php bin/console doctrine:migrations:migrate
+
+migrate-gen: ## 📝 Сгенерировать миграцию
+	docker compose exec -u appuser php bin/console doctrine:migrations:diff
+
+migrate-rollback: ## ↩️ Откатить последнюю миграцию
+	docker compose exec -u appuser php bin/console doctrine:migrations:rollback
+
+routes: ## 🛣️ Показать все маршруты
+	docker compose exec -u appuser php bin/console debug:router
+
+container: ## 📦 Показать все сервисы
+	docker compose exec -u appuser php bin/console debug:container
+
+# ============================================
+# 🛠️ Утилиты
+# ============================================
+
+shell: ## 🐚 Зайти в контейнер PHP
 	docker compose exec -u appuser php bash
 
-restart-workers:
-	@echo "🔄 Restarting Messenger workers..."
-	docker compose exec php supervisorctl restart messenger:*
-	@echo "✅ Workers restarted"
+mysql: ## 🗄️ Зайти в MySQL
+	docker compose exec mysql mysql -u root -proot
+
+redis: ## 🔴 Зайти в Redis
+	docker compose exec redis redis-cli
+
+dev-log: ## 📋 Лог разработки (tail -f var/log/dev.log)
+	docker compose exec -u appuser php tail -f var/log/dev.log
+
+test: ## 🧪 Запустить тесты
+	docker compose exec -u appuser php bin/phpunit
 
 # ============================================
-# PROD
+# 🧹 Очистка
 # ============================================
-prod-up:
-	docker compose -f docker-compose.prod.yml up -d
 
-prod-down:
-	docker compose -f docker-compose.prod.yml down
+clean: ## 🧹 Очистить кэш и ассеты
+	rm -rf var/cache/*
+	rm -rf var/log/*
+	rm -rf public/assets/*
+	make assets
 
-prod-build:
-	docker compose -f docker-compose.prod.yml build
+prune: ## 🗑️ Полная очистка Docker (все образы, тома)
+	docker system prune -af
+	# docker volume prune -f  # Закомментировано, чтобы не удалить данные БД случайно
 
-prod-restart:
-	docker compose -f docker-compose.prod.yml restart
+prune-all: ## ☢️ ПОЛНАЯ очистка ВСЕГО (включая volume с данными)
+	docker system prune -af
+	docker volume prune -f
+	@echo "⚠️ Все данные удалены! Не забудь восстановить БД из бекапа."
 
-prod-logs:
-	docker compose -f docker-compose.prod.yml logs -f
+# ============================================
+# 📦 Разработка
+# ============================================
 
-prod-bash:
-	docker compose -f docker-compose.prod.yml exec php bash
+dev: ## 🚀 Поднять проект в dev-режиме
+	docker compose up -d
+	make assets
+	make cc
+	@echo "✅ Проект готов: http://localhost:49020"
 
-prod-deploy: prod-build prod-up
-	@echo "🚀 Production deployed!"
+watch: ## 👀 Следить за изменениями ассетов
+	docker compose exec -u appuser php bin/console asset-map:watch
+
+# ============================================
+# 📖 Чтение метаданных (бонус)
+# ============================================
+
+meta: ## 🎵 Показать метаданные файла (FILE=путь)
+	docker compose exec -u appuser php bin/console debug:metadata $(FILE)

@@ -1,34 +1,13 @@
 import '@hotwired/turbo';
 import './stimulus_bootstrap.js';
 import './styles/app.scss';
+import WaveSurfer from 'wavesurfer.js';
 
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const html = document.documentElement;
     const current = html.getAttribute('data-bs-theme');
     html.setAttribute('data-bs-theme', current === 'dark' ? 'light' : 'dark');
 });
-
-// window.addEventListener('beforeunload', function() {
-//     const audio = document.getElementById('player');
-//     const currentTrackId = document.getElementById('player').dataset.trackId;
-//
-//     if (audio && currentTrackId) {
-//         localStorage.setItem(`player-position-${currentTrackId}`, audio.currentTime);
-//         localStorage.setItem('last-track-id', currentTrackId);
-//     }
-// });
-//
-// document.addEventListener('turbo:load', function() {
-//     const audio = document.getElementById('player');
-//     const trackId = document.getElementById('player')?.dataset.trackId;
-//
-//     if (audio && trackId) {
-//         const saved = localStorage.getItem(`player-position-${trackId}`);
-//         if (saved !== null) {
-//             audio.currentTime = parseFloat(saved);
-//         }
-//     }
-// });
 
 document.addEventListener('DOMContentLoaded', function () {
     const banner = document.getElementById('cookie-banner');
