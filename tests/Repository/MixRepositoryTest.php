@@ -5,6 +5,7 @@ namespace App\Tests\Repository;
 use App\Entity\Mix;
 use App\Entity\User;
 use App\Repository\MixRepository;
+use App\Specification\PublicMixesSpecification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -62,7 +63,7 @@ class MixRepositoryTest extends KernelTestCase
         $this->entityManager->flush();
 
         // Тестируем
-        $result = $this->repository->findPublic();
+        $result = $this->repository->findMatches(new PublicMixesSpecification());
 
         $this->assertCount(1, $result);
         $this->assertSame('Public Mix', $result[0]->getTitle());

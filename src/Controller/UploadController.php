@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class UploadController extends AbstractController
@@ -22,6 +24,7 @@ class UploadController extends AbstractController
     public function __construct(
         private readonly CommandBus $commandBus,
         private readonly MessageBusInterface $messageBus,
+        private readonly CsrfTokenManagerInterface $csrfTokenManager,
     ) {}
 
     #[Route('/upload', name: 'app_upload')]
@@ -36,6 +39,13 @@ class UploadController extends AbstractController
     #[Route('/upload/upload', name: 'app_upload_upload', methods: ['POST'])]
     public function upload(Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        $submittedToken = $request->getPayload()->get('_csrf_token');
+        $token = new CsrfToken('upload', $submittedToken);
+
+        if (!$this->csrfTokenManager->isTokenValid($token)) {
+            return $this->json(['error' => true, 'message' => 'Недействительный CSRF-токен'], 403);
+        }
+
         /** @var UploadedFile $file */
         $file = $request->files->get('file');
         $title = $request->getPayload()->get('title') ?: 'Без названия';

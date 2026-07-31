@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Mix;
+use App\Specification\SpecificationInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -35,13 +36,28 @@ class MixRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<Mix>
+     * @return Mix[]
      */
-    public function findPublic(): array
+    public function findMatches(SpecificationInterface $specification): array
     {
-        return $this->createQueryBuilder('m')
-            ->where('m.isPrivate = false')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('m');
+
+        foreach ($specification->getJoins() as $join) {
+            $qb->addSelect($join)->leftJoin(
+                substr($join, strpos($join, '.') + 1),
+                substr($join, 0, strpos($join, '.'))
+            );
+        }
+
+        $dql = $specification->toDQL('m');
+        if ($dql) {
+            $qb->andWhere($dql);
+        }
+
+        foreach ($specification->getParameters() as $key => $value) {
+            $qb->setParameter($key, $value);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

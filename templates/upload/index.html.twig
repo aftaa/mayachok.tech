@@ -6,6 +6,8 @@
 
         <div class="card p-4">
             <form action="{{ url('app_upload_upload') }}" id="upload-form" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('upload') }}">
+
                 <div class="mb-3">
                     <label for="mixFile" class="form-label">Выберите файл</label>
                     <input type="file" class="form-control" id="mixFile" name="file" accept=".mp3,.flac,.wav,.aiff" required>

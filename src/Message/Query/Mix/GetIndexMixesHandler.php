@@ -5,6 +5,7 @@ namespace App\Message\Query\Mix;
 use App\Entity\Mix;
 use App\Repository\MixRepository;
 use App\Service\S3Uploader;
+use App\Specification\PublicMixesSpecification;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler(bus: 'query.bus')]
@@ -21,7 +22,7 @@ readonly class GetIndexMixesHandler
      */
     public function __invoke(GetIndexMixesQuery $query): array
     {
-        $mixes = $this->mixRepository->findPublic();
+        $mixes = $this->mixRepository->findMatches(new PublicMixesSpecification());
 
         return array_map(function ($mix) {
             return [
