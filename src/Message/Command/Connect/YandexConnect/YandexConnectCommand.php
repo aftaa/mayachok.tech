@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Command\Connect;
+namespace App\Message\Command\Connect\YandexConnect;
 
 final readonly class YandexConnectCommand
 {

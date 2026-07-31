@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Command\Mix;
+namespace App\Message\Command\Mix;
 
 class UploadException extends \Exception
 {

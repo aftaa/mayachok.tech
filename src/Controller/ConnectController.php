@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Command\Connect\YandexConnectCommand;
+use App\Message\Command\Connect\YandexConnect\YandexConnectCommand;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

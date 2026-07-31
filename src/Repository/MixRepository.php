@@ -37,8 +37,11 @@ class MixRepository extends ServiceEntityRepository
     /**
      * @return list<Mix>
      */
-    public function getAll(): array
+    public function findPublic(): array
     {
-        return $this->findAll();
+        return $this->createQueryBuilder('m')
+            ->where('m.isPrivate = false')
+            ->getQuery()
+            ->getResult();
     }
 }

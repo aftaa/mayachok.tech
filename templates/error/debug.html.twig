@@ -1,0 +1,198 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}🐞 Debug - Ошибка{% endblock %}
+
+{% block body %}
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h3 class="mb-0">
+                            <i class="bi bi-bug"></i>
+                            Исключение: {{ constant('class', exception) }}
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Основная информация -->
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">⚠️ {{ exception.message }}</h4>
+                            <hr>
+                            <p class="mb-0">
+                                <strong>Файл:</strong> {{ exception.file }} : {{ exception.line }}
+                            </p>
+                        </div>
+
+                        <!-- Трассировка стека -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-dark text-white">
+                                <i class="bi bi-stack"></i> Stack Trace
+                            </div>
+                            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                                <div class="bg-light p-3">
+                                    <pre style="font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;"><code>{{ exception.traceAsString|nl2br }}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Информация о запросе -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <i class="bi bi-globe"></i> Запрос
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm table-borderless">
+                                            <tr>
+                                                <td><strong>URI:</strong></td>
+                                                <td><code>{{ app.request.uri }}</code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Метод:</strong></td>
+                                                <td><span class="badge bg-primary">{{ app.request.method }}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>IP:</strong></td>
+                                                <td>{{ app.request.clientIp }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>User Agent:</strong></td>
+                                                <td><small>{{ app.request.headers.get('User-Agent')|slice(0, 100) }}</small></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Referer:</strong></td>
+                                                <td><small>{{ app.request.headers.get('Referer') }}</small></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <i class="bi bi-database"></i> Окружение
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm table-borderless">
+                                            <tr>
+                                                <td><strong>Environment:</strong></td>
+                                                <td><span class="badge {{ app.environment == 'dev' ? 'bg-warning' : 'bg-secondary' }}">{{ app.environment }}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Debug:</strong></td>
+                                                <td><span class="badge {{ app.debug ? 'bg-success' : 'bg-secondary' }}">{{ app.debug ? 'Включен' : 'Выключен' }}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>User:</strong></td>
+                                                <td>{{ app.user ? app.user.userIdentifier : '<не авторизован>'|raw }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Время:</strong></td>
+                                                <td>{{ 'now'|date('Y-m-d H:i:s') }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>PHP:</strong></td>
+                                                <td>{{ constant('PHP_VERSION') }}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GET/POST параметры -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-warning text-dark">
+                                        <i class="bi bi-arrow-up-circle"></i> GET параметры
+                                    </div>
+                                    <div class="card-body">
+                                        {% if app.request.query.all|length > 0 %}
+                                            <pre class="bg-light p-2"><code>{{ app.request.query.all|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                        {% else %}
+                                            <p class="text-muted">Нет GET параметров</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <i class="bi bi-arrow-down-circle"></i> POST параметры
+                                    </div>
+                                    <div class="card-body">
+                                        {% if app.request.request.all|length > 0 %}
+                                            <pre class="bg-light p-2"><code>{{ app.request.request.all|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                        {% else %}
+                                            <p class="text-muted">Нет POST параметров</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Сессия -->
+                        <div class="card mt-4">
+                            <div class="card-header bg-secondary text-white">
+                                <i class="bi bi-database"></i> Сессия
+                            </div>
+                            <div class="card-body">
+                                {% if app.session %}
+                                    <pre class="bg-light p-2"><code>{{ app.session.all|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                {% else %}
+                                    <p class="text-muted">Сессия недоступна</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Кнопки -->
+                        <div class="mt-4 d-flex gap-2 flex-wrap">
+                            <a href="{{ path('app_index') }}" class="btn btn-primary">
+                                <i class="bi bi-house"></i> На главную
+                            </a>
+                            <button onclick="location.reload()" class="btn btn-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Обновить
+                            </button>
+                            <button onclick="history.back()" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Назад
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="document.querySelector('.card-body').classList.toggle('debug-hidden')">
+                                <i class="bi bi-eye-slash"></i> Скрыть/показать
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .debug-hidden .card-body > *:not(.alert) {
+            display: none !important;
+        }
+        pre {
+            margin: 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        code {
+            color: #333;
+        }
+        .card {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .card-header {
+            font-weight: 600;
+        }
+        .table td {
+            padding: 4px 8px;
+        }
+        .table td:first-child {
+            width: 40%;
+            font-weight: 500;
+        }
+    </style>
+{% endblock %}

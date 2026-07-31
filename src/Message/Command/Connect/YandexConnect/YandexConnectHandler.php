@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Command\Connect;
+namespace App\Message\Command\Connect\YandexConnect;
 
 use Aego\OAuth2\Client\Provider\YandexResourceOwner;
 use App\Entity\User;

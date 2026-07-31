@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ошибка 500 - Что-то пошло не так{% endblock %}
+
+{% block body %}
+    <div class="container py-5 text-center">
+        <div class="error-page">
+            <div class="error-icon mb-4">
+                <span style="font-size: 80px;">😵</span>
+            </div>
+
+            <h1 class="display-1 fw-bold text-danger">500</h1>
+            <h2 class="mb-4">Что-то пошло не так</h2>
+
+            <p class="text-muted mb-4" style="max-width: 500px; margin: 0 auto;">
+                Извините, на сервере произошла ошибка.
+                Мы уже знаем о проблеме и работаем над её исправлением.
+            </p>
+
+            <div class="mt-4">
+                <a href="{{ path('app_index') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-house"></i> На главную
+                </a>
+                <button onclick="location.reload()" class="btn btn-outline-secondary btn-lg ms-2">
+                    <i class="bi bi-arrow-clockwise"></i> Попробовать снова
+                </button>
+            </div>
+
+            <div class="mt-5">
+                <small class="text-muted">
+                    Если ошибка повторяется, напишите нам:
+                    <a href="mailto:after@ya.ru">after@ya.ru</a>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .error-page {
+            margin-top: 10vh;
+        }
+        .error-icon {
+            animation: shake 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes shake {
+            0% { transform: rotate(-5deg) scale(1); }
+            100% { transform: rotate(5deg) scale(1.05); }
+        }
+    </style>
+{% endblock %}

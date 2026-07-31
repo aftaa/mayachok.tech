@@ -1,8 +1,7 @@
 <?php
 
-namespace App\MessageHandler;
+namespace App\Message\Async;
 
-use App\Message\ProcessMixMessage;
 use App\Repository\MixRepository;
 use App\Service\S3Uploader;
 use Psr\Log\LoggerInterface;
@@ -41,7 +40,7 @@ final readonly class ProcessMixHandler
 
         // Шаг 1: Конвертация (15% → 30%)
         $this->success($message->mixId, '⏳ Подготовка к конвертации...', 10);
-        [$success, $mp3Path] = $this->convertToMp3($filename, $message->mixId);
+        [$success, $mp3Path] = $this->convertToMp3($filename);
         if (!$success) {
             return;
         }

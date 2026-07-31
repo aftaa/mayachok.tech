@@ -2,42 +2,30 @@
 
 namespace App\Controller;
 
-use App\Repository\MixRepository;
-use App\Service\S3Uploader;
+use App\Message\Query\Mix\GetIndexMixesQuery;
+use App\Message\QueryBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 class IndexController extends AbstractController
 {
     public function __construct(
-        private readonly MixRepository $mixRepository,
-        private readonly S3Uploader $s3Uploader,
+        private readonly QueryBus $queryBus,
     ) {
     }
 
+    /**
+     * @throws ExceptionInterface
+     */
     #[Route('/', name: 'app_index')]
     public function index(): Response
     {
-        $mixes = $this->mixRepository->getAll();
-
-        // Подготавливаем данные для каждого микса
-        $mixesData = array_map(function($mix) {
-            return [
-                'id' => $mix->getId(),
-                'title' => $mix->getTitle(),
-                'artist' => $mix->getArtist(),
-                'duration' => $mix->getDuration(),
-                's3StreamUrl' => $this->s3Uploader->getPublicUrl($mix->getS3StreamKey()),
-                's3PeaksUrl' => $mix->getPeaksKey()
-                    ? $this->s3Uploader->getPublicUrl($mix->getPeaksKey())
-                    : null,
-                'isProcessed' => $mix->isProcessed(),
-            ];
-        }, $mixes);
+        $mixes = $this->queryBus->dispatch(new GetIndexMixesQuery(50));
 
         return $this->render('index/index.html.twig', [
-            'mixes' => $mixesData
+            'mixes' => $mixes
         ]);
     }
 }

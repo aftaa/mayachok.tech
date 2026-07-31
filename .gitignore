@@ -36,3 +36,7 @@ docker-compose.override.yml
 ###> symfonycasts/sass-bundle ###
 /public/assets/
 ###< symfonycasts/sass-bundle ###
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/

@@ -2,11 +2,11 @@
 
 namespace App\Controller;
 
-use App\Command\Mix\UploadCommand;
-use App\Command\Mix\UploadException;
 use App\Entity\User;
+use App\Message\Command\Mix\UploadCommand;
+use App\Message\Command\Mix\UploadException;
 use App\Message\CommandBus;
-use App\Message\ProcessMixMessage;
+use App\Message\Async\ProcessMixMessage;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;

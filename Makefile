@@ -99,7 +99,9 @@ dev-log: ## 📋 Лог разработки (tail -f var/log/dev.log)
 	docker compose exec -u appuser php tail -f var/log/dev.log
 
 test: ## 🧪 Запустить тесты
-	docker compose exec -u appuser php bin/phpunit
+	docker compose exec -u appuser php bin/console doctrine:schema:drop --env=test --force
+	docker compose exec -u appuser php bin/console doctrine:schema:create --env=test
+	docker compose exec -u appuser php bin/phpunit --testdox --display-notices
 
 # ============================================
 # 🧹 Очистка

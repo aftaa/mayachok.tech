@@ -36,8 +36,12 @@ class S3Uploader
         ]);
     }
 
-    public function getPublicUrl(string $key): string
+    public function getPublicUrl(?string $key): string
     {
+        if (null === $key) {
+            return '';
+        }
+
         return $this->client->getObjectUrl($this->bucket, $key);
     }
 }

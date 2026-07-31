@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Message;
+namespace App\Message\Async;
 
 class ProcessMixMessage implements AsyncMessageInterface
 {

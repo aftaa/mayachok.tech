@@ -41,6 +41,9 @@ class Mix
     #[ORM\Column(nullable: true)]
     private ?int $duration = null;
 
+    #[ORM\Column]
+    private ?bool $isPrivate = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -150,6 +153,18 @@ class Mix
     public function setDuration(?int $duration): static
     {
         $this->duration = $duration;
+
+        return $this;
+    }
+
+    public function isPrivate(): ?bool
+    {
+        return $this->isPrivate;
+    }
+
+    public function setIsPrivate(bool $isPrivate): static
+    {
+        $this->isPrivate = $isPrivate;
 
         return $this;
     }

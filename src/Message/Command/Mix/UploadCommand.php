@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Command\Mix;
+namespace App\Message\Command\Mix;
 
 use App\Entity\User;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
