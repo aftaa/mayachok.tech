@@ -48,6 +48,8 @@ class UploadController extends AbstractController
     #[Route('/upload/upload', name: 'app_upload_upload', methods: ['POST'])]
     public function upload(Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        $json = [];
+
         if (!$this->checkCsrf($request->request->get('_csrf_token'), $json)) {
             return $this->json($json, 403);
         }
