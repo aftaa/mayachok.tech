@@ -8,6 +8,7 @@ use App\Message\Command\Mix\UploadException;
 use App\Message\CommandBus;
 use App\Message\Async\ProcessMixMessage;
 use App\Service\UploadLimiter;
+use DateMalformedStringException;
 use Psr\Http\Message\UploadedFileInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -100,6 +101,9 @@ class UploadController extends AbstractController
         return $this->csrfTokenManager->isTokenValid($token);
     }
 
+    /**
+     * @throws DateMalformedStringException
+     */
     private function checkTimeLimit(UserInterface|User $user, array & $json): bool
     {
         $limitResult = $this->uploadLimiter->checkAndIncrement($user->getId());

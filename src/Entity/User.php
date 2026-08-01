@@ -217,6 +217,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function hasStorageSpace(int $bytes): bool
     {
+        if (0 == $this->getStorageLimit()) {
+            return true;
+        }
+
         return ($this->storageUsed + $bytes) <= $this->storageLimit;
     }
 
