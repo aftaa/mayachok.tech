@@ -9,7 +9,7 @@
                     <img alt="" src="{{ app.user.avatarUrl }}" height="42" id="menu-avatar">
                 </li>
                 <li class="nav-link">
-                    <strong>Hi, {{ app.user.displayName }}!</strong>
+                    <strong>Привет, {{ app.user.displayName }}!</strong>
                 </li>
             {% else %}
                 <li class="nav-item">
@@ -17,18 +17,18 @@
                 </li>
             {% endif %}
             <li class="nav-item">
-                <a class="nav-link{{ currentUrl == path('app_privacy') ? ' active' : '' }}"
+                <a class="nav-link{{ currentUrl == url('app_privacy') ? ' active' : '' }}"
                    href="{{ url('app_privacy') }}" data-turbo-frame="content" data-turbo-action="advance">Privacy</a>
             </li>
             {% if app.user %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url('app_upload') }}">Upload</a>
+                    <a class="nav-link" href="{{ url('app_upload') }}" data-turbo-frame="content" data-turbo-action="advance">Upload</a>
                 </li>
 {#                <li class="nav-item">#}
 {#                    <a class="nav-link" href="{{ url('app_logout') }}">Profile</a>#}
 {#                </li>#}
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url('app_logout') }}" onclick="return confirm('Уверены?');">Logout</a>
+                    <a class="nav-link" href="{{ url('app_logout') }}" onclick="return confirm('Уверены?');" data-turbo="false">Logout</a>
                 </li>
             {% endif %}
 

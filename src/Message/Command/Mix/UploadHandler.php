@@ -12,7 +12,7 @@ final readonly class UploadHandler
     private const array ALLOWED_MIME_TYPES = ['audio/mpeg', 'audio/flac', 'audio/wav', 'audio/aiff', 'audio/x-wav'];
 
     public function __construct(
-        private readonly MixRepository $mixRepository,
+        private MixRepository $mixRepository,
     ) {
     }
 

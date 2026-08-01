@@ -95,7 +95,7 @@ class PlayerFacade {
             this.waveform.load(audioUrl);
         }
 
-        this.notify('load', { mixId, title, artist });
+        this.notify('load', {mixId, title, artist});
     }
 
     play() {
@@ -144,13 +144,10 @@ class PlayerFacade {
     }
 }
 
-// Создаем глобальный экземпляр
-window.player = new PlayerFacade();
-
-// ===== UI Биндинги =====
-
-// Кнопка Play/Pause
 document.addEventListener('DOMContentLoaded', () => {
+    // Создаем глобальный экземпляр
+    window.player = new PlayerFacade();
+
     const playBtn = document.getElementById('player-play');
     const timeDisplay = document.getElementById('player-time');
     const durationDisplay = document.getElementById('player-duration');
@@ -163,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Обновляем время
-    window.player.subscribe('timeupdate', ({ currentTime, duration }) => {
+    window.player.subscribe('timeupdate', ({currentTime, duration}) => {
         timeDisplay.textContent = formatTime(currentTime);
         durationDisplay.textContent = formatTime(duration);
     });
@@ -183,13 +180,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Обновляем обложку при загрузке
-    window.player.subscribe('load', ({ title, artist }) => {
+    window.player.subscribe('load', ({title, artist}) => {
         // Можно менять цвет обложки или показывать первую букву
         const icon = cover.querySelector('.player-cover-icon');
         if (icon) {
             icon.textContent = title ? title.charAt(0).toUpperCase() : '🎵';
         }
     });
+
+    document.addEventListener('click', function (e) {
+        const playBtn = e.target.closest('.play-btn');
+        if (!playBtn) return;
+
+        e.preventDefault();
+
+        const mixId = playBtn.dataset.mixId;
+        const audioUrl = playBtn.dataset.audioUrl;
+        const peaksUrl = playBtn.dataset.peaksUrl || null;
+        const title = playBtn.dataset.title || 'Без названия';
+        const artist = playBtn.dataset.artist || 'Неизвестный исполнитель';
+
+        // Загружаем трек
+        window.player.loadTrack(mixId, audioUrl, peaksUrl, title, artist);
+
+        // Воспроизводим
+        setTimeout(() => window.player.play(), 100);
+    });
+
+    console.log('✅ window.player создан:', window.player);
+    console.log('✅ Элемент turbo-player:', document.getElementById('turbo-player'));
 });
 
 // Форматирование времени
@@ -199,27 +218,3 @@ function formatTime(seconds) {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
-
-// ===== Обработчик для кнопок Play =====
-
-document.addEventListener('click', function(e) {
-    const playBtn = e.target.closest('.play-btn');
-    if (!playBtn) return;
-
-    e.preventDefault();
-
-    const mixId = playBtn.dataset.mixId;
-    const audioUrl = playBtn.dataset.audioUrl;
-    const peaksUrl = playBtn.dataset.peaksUrl || null;
-    const title = playBtn.dataset.title || 'Без названия';
-    const artist = playBtn.dataset.artist || 'Неизвестный исполнитель';
-
-    // Загружаем трек
-    window.player.loadTrack(mixId, audioUrl, peaksUrl, title, artist);
-
-    // Воспроизводим
-    setTimeout(() => window.player.play(), 100);
-});
-
-console.log('✅ window.player создан:', window.player);
-console.log('✅ Элемент turbo-player:', document.getElementById('turbo-player'));

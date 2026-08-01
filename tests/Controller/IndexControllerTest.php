@@ -13,7 +13,6 @@ class IndexControllerTest extends WebTestCase
         $client = static::createClient();
         $entityManager = static::getContainer()->get('doctrine')->getManager();
 
-        // Создаем пользователя
         $user = new User();
         $user->setEmail('test@example.com');
         $user->setDisplayName('Test User');
@@ -21,7 +20,6 @@ class IndexControllerTest extends WebTestCase
         $user->setPassword('');
         $entityManager->persist($user);
 
-        // Публичный микс
         $publicMix = new Mix();
         $publicMix->setTitle('Public Mix');
         $publicMix->setArtist('Test Artist');
@@ -31,7 +29,6 @@ class IndexControllerTest extends WebTestCase
         $publicMix->setIsPrivate(false);
         $entityManager->persist($publicMix);
 
-        // Приватный микс
         $privateMix = new Mix();
         $privateMix->setTitle('Private Mix');
         $privateMix->setArtist('Test Artist');
@@ -43,7 +40,6 @@ class IndexControllerTest extends WebTestCase
 
         $entityManager->flush();
 
-        // Запрос к главной
         $crawler = $client->request('GET', '/');
 
         $this->assertResponseIsSuccessful();

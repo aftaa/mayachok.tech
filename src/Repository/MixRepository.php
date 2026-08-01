@@ -35,6 +35,15 @@ class MixRepository extends ServiceEntityRepository
         }
     }
 
+    public function findOneByUuid(string $uuid): ?Mix
+    {
+        return $this->createQueryBuilder('m')
+            ->where('m.uuid = :uuid')
+            ->setParameter('uuid', $uuid)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /**
      * @return Mix[]
      */
@@ -43,10 +52,12 @@ class MixRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('m');
 
         foreach ($specification->getJoins() as $join) {
-            $qb->addSelect($join)->leftJoin(
-                substr($join, strpos($join, '.') + 1),
-                substr($join, 0, strpos($join, '.'))
-            );
+            $parts = explode('.', $join);
+            if (count($parts) === 2) {
+                $alias = $parts[0];
+                $field = $parts[1];
+                $qb->leftJoin("{$alias}.{$field}", $field);
+            }
         }
 
         $dql = $specification->toDQL('m');

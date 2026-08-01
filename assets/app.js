@@ -1,7 +1,6 @@
 import '@hotwired/turbo';
 import './stimulus_bootstrap.js';
 import './styles/app.scss';
-import WaveSurfer from 'wavesurfer.js';
 
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const html = document.documentElement;

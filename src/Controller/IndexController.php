@@ -25,7 +25,7 @@ class IndexController extends AbstractController
         $mixes = $this->queryBus->dispatch(new GetIndexMixesQuery(50));
 
         return $this->render('index/index.html.twig', [
-            'mixes' => $mixes
+            'mixes' => $mixes,
         ]);
     }
 }

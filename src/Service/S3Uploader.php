@@ -44,4 +44,20 @@ class S3Uploader
 
         return $this->client->getObjectUrl($this->bucket, $key);
     }
+
+    public function getPresignedUrl(?string $key, int $expiresIn = 3600): string
+    {
+        if (null === $key) {
+            return '';
+        }
+
+        $command = $this->client->getCommand('GetObject', [
+            'Bucket' => $this->bucket,
+            'Key' => $key,
+        ]);
+
+        $request = $this->client->createPresignedRequest($command, "+{$expiresIn} seconds");
+
+        return (string) $request->getUri();
+    }
 }

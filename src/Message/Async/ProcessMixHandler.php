@@ -9,6 +9,8 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 #[AsMessageHandler]
 final readonly class ProcessMixHandler
@@ -21,6 +23,7 @@ final readonly class ProcessMixHandler
         private S3Uploader $s3Uploader,
     ) {
     }
+
     public function __invoke(ProcessMixMessage $message): void
     {
         $this->logger->info('Начинаем обработку микса №' . $message->mixId);
@@ -38,28 +41,33 @@ final readonly class ProcessMixHandler
             return;
         }
 
-        // Шаг 1: Конвертация (15% → 30%)
+        $originalSize = filesize($filename);
+        $mix->setOriginalSize($originalSize);
+
+        // Шаг 1: Конвертация
         $this->success($message->mixId, '⏳ Подготовка к конвертации...', 10);
         [$success, $mp3Path] = $this->convertToMp3($filename);
         if (!$success) {
             return;
         }
+        $mix->setMp3Size(filesize($mp3Path));
 
-        // Шаг 2: Анализ (30% → 50%)
+        // Шаг 2: Анализ
         try {
             $this->success($message->mixId, '⏳ Подготовка к анализу...', 35);
             $duration = $this->getDuration($mp3Path);
             $mix->setDuration($duration);
             $this->repository->save($mix);
 
-            $peaksPath = $this->generatePeaks($mp3Path, $message->mixId);
+            $peaksPath = $this->generatePeaks($mp3Path);
+            $mix->setPeaksSize(filesize($peaksPath));
             $this->success($message->mixId, '✅ Анализ завершен, загружаем в облако', 55);
         } catch (\Throwable $e) {
             $this->error($message->mixId, 'Ошибка анализа: ' . $e->getMessage());
             return;
         }
 
-        // Шаг 3: Загрузка в S3 (55% → 90%)
+        // Шаг 3: Загрузка в S3
         $this->success($message->mixId, '⏳ Загрузка оригинала...', 60);
         $this->s3Uploader->upload('originals/' . basename($filename), $filename);
 
@@ -71,13 +79,19 @@ final readonly class ProcessMixHandler
         $this->success($message->mixId, '⏳ Загрузка данных волны...', 80);
         $this->s3Uploader->upload('peaks/' . basename($peaksPath), $peaksPath);
 
-        // Шаг 4: Обновление БД (90% → 100%)
+        // Шаг 4: Обновление БД
         $this->success($message->mixId, '⏳ Сохранение данных...', 90);
 
         $mix->setS3OriginalKey('originals/' . basename($filename));
         $mix->setS3StreamKey('mp3/' . basename($mp3Path));
         $mix->setPeaksKey('peaks/' . basename($peaksPath));
         $mix->setIsProcessed(true);
+
+        // Обновляем использованное место пользователя
+        $user = $mix->getUser();
+        $totalSize = $mix->getTotalSize();
+        $user->addStorageUsed($totalSize);
+
         $this->repository->save($mix);
 
         // Шаг 5: Очистка
@@ -90,36 +104,34 @@ final readonly class ProcessMixHandler
         $this->success($message->mixId, '✅ Микс готов! 🎵', 100);
     }
 
-    /**
-     * @return array{bool, string}
-     */
     private function convertToMp3(string $filename): array
     {
         if ($this->isMp3($filename)) {
             return [true, $filename];
         }
 
-        $outputPath =
-            dirname($filename) . DIRECTORY_SEPARATOR .
+        $outputPath = dirname($filename) . DIRECTORY_SEPARATOR .
             pathinfo($filename, PATHINFO_FILENAME) . '.mp3';
 
-        $command = sprintf(
-            'ffmpeg -i %s -acodec mp3 -ab 320k %s 2>&1',
-            escapeshellarg($filename),
-            escapeshellarg($outputPath)
-        );
+        $process = new Process([
+            'ffmpeg',
+            '-y',
+            '-i', $filename,
+            '-acodec', 'libmp3lame',
+            '-ab', '320k',
+            $outputPath,
+        ]);
 
-        exec($command, $output, $returnCode);
-        $this->logger->info(join("\n", $output));
+        $process->setTimeout(1800); // 30 минут
+        $process->run();
 
-        if (!$returnCode) {
-            $this->logger->info('Файл конвертирован в mp3: ' . $outputPath);
-
-            return [true, $outputPath];
+        if (!$process->isSuccessful()) {
+            $this->logger->error('FFmpeg error: ' . $process->getErrorOutput());
+            return [false, ''];
         }
-        $this->logger->error('Ошибка конвертации в mp3: ' . $outputPath);
 
-        return [false, ''];
+        $this->logger->info('Файл конвертирован в mp3: ' . $outputPath);
+        return [true, $outputPath];
     }
 
     private function isMp3(string $filename): bool
@@ -129,29 +141,44 @@ final readonly class ProcessMixHandler
 
     private function getDuration(string $filename): int
     {
-        $command = sprintf(
-            'ffprobe -i %s -show_entries format=duration -v quiet -of csv="p=0" 2>&1',
-            escapeshellarg($filename)
-        );
+        $process = new Process([
+            'ffprobe',
+            '-i', $filename,
+            '-show_entries', 'format=duration',
+            '-v', 'quiet',
+            '-of', 'csv=p=0',
+        ]);
 
-        $output = shell_exec($command);
-        return (int) round((float) trim($output));
+        $process->setTimeout(60);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            $this->logger->error('FFprobe error: ' . $process->getErrorOutput());
+            return 0;
+        }
+
+        return (int) round((float) trim($process->getOutput()));
     }
 
     private function generatePeaks(string $filename): string
     {
-        $outputPath = pathinfo($filename, PATHINFO_DIRNAME) . '/' . pathinfo($filename, PATHINFO_FILENAME) . '.peaks.json';
+        $outputPath = pathinfo($filename, PATHINFO_DIRNAME) . '/' .
+            pathinfo($filename, PATHINFO_FILENAME) . '.peaks.json';
 
-        $command = sprintf(
-            'audiowaveform -i %s -o %s --pixels-per-second 20 --bits 8 2>&1',
-            escapeshellarg($filename),
-            escapeshellarg($outputPath)
-        );
+        $process = new Process([
+            'audiowaveform',
+            '-i', $filename,
+            '-o', $outputPath,
+            '--pixels-per-second', '20',
+            '--bits', '8',
+        ]);
 
-        exec($command, $output, $returnCode);
+        $process->setTimeout(300); // 5 минут
+        $process->run();
 
-        if ($returnCode !== 0) {
-            throw new \RuntimeException('Peak generation failed: ' . implode("\n", $output));
+        if (!$process->isSuccessful()) {
+            $this->logger->error('Audiowaveform error: ' . $process->getErrorOutput());
+            throw new \RuntimeException('Peak generation failed: ' . $process->getErrorOutput());
         }
 
         return $outputPath;

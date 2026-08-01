@@ -46,6 +46,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $birthday = null;
 
+    #[ORM\Column(type: 'bigint')]
+    private int $storageUsed = 0;
+
+    #[ORM\Column(type: 'bigint')]
+    private int $storageLimit = 10737418240; // 10GB
+
     /**
      * @var Collection<int, Mix>
      */
@@ -77,23 +83,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * @see UserInterface
-     */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
@@ -109,9 +106,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
     public function getPassword(): ?string
     {
         return $this->password;
@@ -124,9 +118,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
-     */
     public function __serialize(): array
     {
         $data = (array) $this;
@@ -181,6 +172,52 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->birthday = $birthday;
 
         return $this;
+    }
+
+    public function getStorageUsed(): int
+    {
+        return $this->storageUsed;
+    }
+
+    public function setStorageUsed(int $storageUsed): static
+    {
+        $this->storageUsed = $storageUsed;
+
+        return $this;
+    }
+
+    public function addStorageUsed(int $bytes): static
+    {
+        $this->storageUsed += $bytes;
+
+        return $this;
+    }
+
+    public function subtractStorageUsed(int $bytes): static
+    {
+        $this->storageUsed -= $bytes;
+        if ($this->storageUsed < 0) {
+            $this->storageUsed = 0;
+        }
+
+        return $this;
+    }
+
+    public function getStorageLimit(): int
+    {
+        return $this->storageLimit;
+    }
+
+    public function setStorageLimit(int $storageLimit): static
+    {
+        $this->storageLimit = $storageLimit;
+
+        return $this;
+    }
+
+    public function hasStorageSpace(int $bytes): bool
+    {
+        return ($this->storageUsed + $bytes) <= $this->storageLimit;
     }
 
     /**

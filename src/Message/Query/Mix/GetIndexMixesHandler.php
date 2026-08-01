@@ -27,6 +27,7 @@ readonly class GetIndexMixesHandler
         return array_map(function ($mix) {
             return [
                 'id' => $mix->getId(),
+                'uuid' => $mix->getUuid(),
                 'title' => $mix->getTitle(),
                 'artist' => $mix->getArtist(),
                 'duration' => $mix->getDuration(),
