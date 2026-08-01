@@ -1,6 +1,8 @@
 import '@hotwired/turbo';
 import './stimulus_bootstrap.js';
 import './styles/app.scss';
+import 'player';
+import 'upload';
 
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const html = document.documentElement;
