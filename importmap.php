@@ -32,6 +32,14 @@ return [
         'path' => './assets/upload.js',
         'entrypoint' => true,
     ],
+    'mix.list' => [
+        'path' => './assets/mix.list.js',
+        'entrypoint' => true,
+    ],
+    'mix.show' => [
+        'path' => './assets/mix.show.js',
+        'entrypoint' => true,
+    ],
     '@hotwired/stimulus' => ['version' => '3.2.2'],
     '@symfony/stimulus-bundle' => ['path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js'],
     '@hotwired/turbo' => ['version' => '8.0.23'],

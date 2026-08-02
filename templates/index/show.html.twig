@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ mix.title }} — MyMixes{% endblock %}
+
+{% block body %}
+    <div id="mix-show"
+         data-mix-uuid="{{ mix.uuid }}"
+         data-audio-url="{{ mix.s3StreamUrl }}"
+         data-peaks-url="{{ mix.s3PeaksUrl }}"
+         data-title="{{ mix.title }}"
+         data-artist="{{ mix.artist }}"
+         data-duration="{{ mix.duration }}"
+         class="mix-show-container">
+
+        <div class="container py-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ path('app_index') }}" data-turbo-frame="content" data-turbo-action="advance">🎵 Все миксы</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ mix.title }}</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mix-show-cover">
+                        <div class="mix-cover-large" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <span class="mix-cover-icon">🎵</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <h1 class="mix-show-title">{{ mix.title }}</h1>
+                    <p class="mix-show-artist text-muted">{{ mix.artist }}</p>
+
+                    <div class="mix-show-controls mt-3">
+                        <button id="mix-show-play" class="btn btn-primary btn-lg rounded-circle play-btn-large">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                        <span class="mix-show-time ms-3" id="mix-show-time">0:00 / {{ mix.duration|default(0)|date('i:s') }}</span>
+                    </div>
+
+                    <div class="mix-show-progress-container mt-3">
+                        <div class="mix-show-progress-bar" id="mix-show-progress" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div id="mix-show-waveform" class="mix-show-waveform">
+                        <div class="text-center text-muted py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка волны...</span>
+                            </div>
+                            <p class="mt-2">Загрузка волны...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-8">
+                    <h4>💬 Комментарии</h4>
+                    <p class="text-muted">Комментарии будут доступны в ближайшем будущем.</p>
+                </div>
+                <div class="col-md-4">
+                    <h4>🎵 Треклист</h4>
+                    <p class="text-muted">Треклист будет доступен в ближайшем будущем.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

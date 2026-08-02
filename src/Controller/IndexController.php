@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Message\Query\Mix\GetIndexMixesQuery;
+use App\Message\Query\Mix\GetMixShowQuery;
 use App\Message\QueryBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,6 +27,17 @@ class IndexController extends AbstractController
 
         return $this->render('index/index.html.twig', [
             'mixes' => $mixes,
+        ]);
+    }
+
+    /**
+     * @throws ExceptionInterface
+     */
+    #[Route('/mix/{uuid}', name: 'app_mix_show', methods: ['GET'])]
+    public function mixShow(string $uuid): Response
+    {
+        return $this->render('index/show.html.twig', [
+            'mix' => $this->queryBus->dispatch(new GetMixShowQuery($uuid)),
         ]);
     }
 }

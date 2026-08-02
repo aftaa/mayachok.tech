@@ -141,3 +141,21 @@ watch: ## 👀 Следить за изменениями ассетов
 
 meta: ## 🎵 Показать метаданные файла (FILE=путь)
 	docker compose exec -u appuser php bin/console debug:metadata $(FILE)
+
+text:
+	{ \
+		find config -name "*.yaml" -print0 ; \
+		find src -name "*.php" -print0 ; \
+		find templates -name "*.twig" -print0 ; \
+		find tests -name "*.php" -print0 ; \
+		find assets -name "app.js" -print0 ; \
+		find assets -name "player.js" -print0 ; \
+		find assets -name "upload.js" -print0 ; \
+		find assets -name "mix.list.js" -print0 ; \
+		find assets -name "mix.show.js" -print0 ; \
+		find assets/styles -name "*.scss" -print0 ; \
+		find docker/php -name "Dockerfile" -print0 ; \
+		find . -name "docker-compose.yml" -print0 ; \
+		find . -name "Makefile" -print0 ; \
+		find . -name "importmap.php" -print0 ; \
+	} | xargs -0 -I {} sh -c 'echo "=== {} ===" && cat "{}" && echo ""' > /home/max/www/tech.code.txt

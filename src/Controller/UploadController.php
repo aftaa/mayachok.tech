@@ -45,6 +45,7 @@ class UploadController extends AbstractController
 
     /**
      * @throws ExceptionInterface
+     * @throws DateMalformedStringException
      */
     #[Route('/upload/upload', name: 'app_upload_upload', methods: ['POST'])]
     public function upload(Request $request, #[CurrentUser] User $user): JsonResponse

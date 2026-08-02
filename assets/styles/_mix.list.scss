@@ -1,0 +1,186 @@
+// ==========================================
+// Стили карточек миксов (список)
+// ==========================================
+
+.mix-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mix-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.mix-card.playing {
+    border-color: $primary-color;
+    box-shadow: 0 0 20px rgba($primary-color, 0.15);
+}
+
+.mix-cover-wrapper {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.mix-cover {
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.mix-cover-content {
+    text-align: center;
+    color: white;
+}
+
+.mix-cover-icon {
+    font-size: 3rem;
+    display: block;
+}
+
+.mix-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.7);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: white;
+}
+
+.mix-playing-indicator {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba($primary-color, 0.9);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.playing-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.mix-play-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.mix-play-btn:hover {
+    transform: scale(1.1);
+}
+
+.mix-play-btn.active {
+    background: $primary-color;
+    color: white;
+    border-color: $primary-color;
+}
+
+.mix-play-btn.active:hover {
+    background: darken($primary-color, 8%);
+    border-color: darken($primary-color, 8%);
+}
+
+.mix-progress-container {
+    width: 100%;
+    height: 3px;
+    background: rgba($primary-color, 0.1);
+    border-radius: 2px;
+    margin-bottom: 4px;
+    overflow: hidden;
+}
+
+.mix-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, $primary-color, #764ba2);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    width: 0%;
+}
+
+.mix-card.playing .mix-progress-bar {
+    background: linear-gradient(90deg, $primary-color, #764ba2);
+}
+
+.waveform-static {
+    min-height: 32px;
+    background: rgba($primary-color, 0.04);
+    border-radius: 6px;
+    padding: 2px 0;
+    overflow: hidden;
+    transition: background 0.3s ease;
+}
+
+.waveform-static:hover {
+    background: rgba($primary-color, 0.08);
+}
+
+.waveform-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+}
+
+.mix-controls .btn-link {
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.mix-controls .btn-link:hover {
+    color: $primary-color !important;
+    transform: scale(1.1);
+}
+
+.mix-title-link:hover {
+    color: $primary-color !important;
+}
+
+@media (max-width: 768px) {
+    .mix-cover-wrapper {
+        min-height: 80px;
+    }
+
+    .mix-cover-icon {
+        font-size: 2rem;
+    }
+
+    .mix-card .card-title {
+        font-size: 1rem;
+    }
+}

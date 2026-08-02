@@ -1,6 +1,13 @@
 @import 'variables';
 @import '../vendor/bootstrap/dist/css/bootstrap.min.css';
 @import 'theme';
+@import 'player';
+@import 'mix.list';
+@import 'mix.show';
+
+// ==========================================
+// ГЛОБАЛЬНЫЕ СТИЛИ
+// ==========================================
 
 body {
     transition: background 0.3s ease, color 0.3s ease;
@@ -10,9 +17,23 @@ main {
     padding-bottom: 80px;
 }
 
+// ==========================================
+// КОНТЕЙНЕР — расширяем до 1000px
+// ==========================================
+
 .container {
-    max-width: 720px;
+    max-width: $container-max-width;
     padding-top: 2rem;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+// Для страницы микса — тоже расширяем
+.mix-show-container .container {
+    max-width: $container-max-width;
 }
 
 .card {
@@ -20,6 +41,10 @@ main {
     padding: 1.5rem;
     margin-bottom: 1rem;
 }
+
+// ==========================================
+// COOKIE BANNER
+// ==========================================
 
 .cookie-banner {
     position: fixed;
@@ -30,12 +55,12 @@ main {
     background: #1a1a2e;
     color: #fff;
     padding: 16px 20px;
-    border-top: 2px solid #6c63ff;
+    border-top: 2px solid $primary-color;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
     font-family: sans-serif;
 
     &__content {
-        max-width: 1200px;
+        max-width: $container-max-width;
         margin: 0 auto;
         display: flex;
         flex-direction: column;
@@ -54,11 +79,11 @@ main {
         text-align: center;
 
         a {
-            color: #6c63ff;
+            color: $primary-color;
             text-decoration: underline;
 
             &:hover {
-                color: #8a82ff;
+                color: lighten($primary-color, 10%);
             }
         }
 
@@ -83,11 +108,11 @@ main {
         transition: background 0.2s;
 
         &-primary {
-            background: #6c63ff;
+            background: $primary-color;
             color: #fff;
 
             &:hover {
-                background: #5a52e0;
+                background: darken($primary-color, 8%);
             }
         }
 
@@ -107,7 +132,10 @@ main {
     border-radius: 15px;
 }
 
-// ===== ROOT =====
+// ==========================================
+// ROOT
+// ==========================================
+
 :root {
     --color-bg: #0f0f1a;
     --color-card: #1a1a2e;
@@ -130,7 +158,10 @@ main {
     }
 }
 
-// ===== AUTH =====
+// ==========================================
+// AUTH
+// ==========================================
+
 .auth-wrapper {
     display: flex;
     justify-content: center;
@@ -187,7 +218,7 @@ main {
 }
 
 .auth-btn-yandex:hover {
-    background: #d9341a;
+    background: darken(#fc3f1d, 10%);
     color: #fff;
     transform: scale(1.02);
     box-shadow: 0 8px 24px rgba(252, 63, 29, 0.35);
@@ -227,5 +258,3 @@ main {
     transform: scale(1.02);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
-
-@import 'player';

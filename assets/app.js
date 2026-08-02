@@ -4,6 +4,10 @@ import './styles/app.scss';
 import 'player';
 import 'upload';
 
+// ✅ Импортируем инициализаторы
+import { initMixList } from 'mix.list';
+import { initMixShow } from 'mix.show';
+
 document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const html = document.documentElement;
     const current = html.getAttribute('data-bs-theme');
@@ -30,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 banner.style.display = 'none';
             })
             .catch(() => {
-                // fallback: скрыть даже если ошибка
                 banner.style.display = 'none';
             });
     }
@@ -38,6 +41,38 @@ document.addEventListener('DOMContentLoaded', function () {
     acceptBtn.addEventListener('click', acceptCookies);
     declineBtn.addEventListener('click', function () {
         banner.style.display = 'none';
-        // Отказ не сохраняем — покажем снова при следующем визите
     });
 });
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ СТРАНИЦ
+// ==========================================
+
+function initPage() {
+    console.log('🔄 Инициализация страницы...');
+
+    // Проверяем, какая страница загружена
+    if (document.getElementById('mix-show')) {
+        initMixShow();
+    } else if (document.querySelector('.mix-card')) {
+        initMixList();
+    }
+}
+
+// ✅ Обычная загрузка
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initPage, 100);
+});
+
+// ✅ Turbo-переходы
+document.addEventListener('turbo:load', () => {
+    console.log('🔄 turbo:load');
+    setTimeout(initPage, 150);
+});
+
+// ✅ Если страница уже загружена
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(initPage, 200);
+}
+
+console.log('✅ app.js готов');

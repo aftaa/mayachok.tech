@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">🎵 Миксы</h1>
             {% if app.user %}
-                <a href="{{ path('app_upload') }}" class="btn btn-primary">
+                <a href="{{ path('app_upload') }}" class="btn btn-primary" data-turbo-frame="content" data-turbo-action="advance">
                     <i class="bi bi-plus-circle"></i> Загрузить микс
                 </a>
             {% endif %}
@@ -19,23 +19,30 @@
                 <h3>Пока нет миксов</h3>
                 <p class="text-muted">Будьте первым, кто загрузит свой микс!</p>
                 {% if app.user %}
-                    <a href="{{ path('app_upload') }}" class="btn btn-primary mt-3">Загрузить микс</a>
+                    <a href="{{ path('app_upload') }}" class="btn btn-primary mt-3" data-turbo-frame="content" data-turbo-action="advance">Загрузить микс</a>
                 {% else %}
-                    <a href="{{ path('connect_index') }}" class="btn btn-primary mt-3">Войти чтобы загрузить</a>
+                    <a href="{{ path('connect_index') }}" class="btn btn-primary mt-3" data-turbo-frame="content" data-turbo-action="advance">Войти чтобы загрузить</a>
                 {% endif %}
             </div>
         {% else %}
             <div class="row g-3">
                 {% for mix in mixes %}
-                    <div class="col-12" data-turbo="false">
-                        <div class="card mix-card h-100 shadow-sm">
+                    <div class="col-12">
+                        <div class="card mix-card h-100 shadow-sm"
+                             data-mix-uuid="{{ mix.uuid }}"
+                             data-mix-id="{{ mix.id }}">
+
                             <div class="row g-0 h-100">
                                 {# Обложка #}
                                 <div class="col-md-3 col-lg-2 mix-cover-wrapper">
                                     <div class="mix-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                                         <div class="mix-cover-content">
                                             <span class="mix-cover-icon">🎵</span>
-                                            <span class="mix-duration">{{ mix.duration|default(0)|date('i:s') }}</span>
+                                            <span class="mix-duration">{{ mix.duration|duration }}</span>
+                                        </div>
+                                        <div class="mix-playing-indicator" style="display: none;">
+                                            <span class="playing-dot"></span>
+                                            <span class="playing-text">Сейчас играет</span>
                                         </div>
                                     </div>
                                 </div>
@@ -46,7 +53,9 @@
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="flex-grow-1">
                                                 <h5 class="card-title mb-1">
-                                                    <a href="#" class="text-decoration-none text-dark">
+                                                    <a href="{{ path('app_mix_show', {uuid: mix.uuid}) }}"
+                                                       class="text-decoration-none text-dark mix-title-link"
+                                                       data-turbo-frame="content" data-turbo-action="advance">
                                                         {{ mix.title }}
                                                     </a>
                                                 </h5>
@@ -55,21 +64,22 @@
                                                 </p>
                                             </div>
                                             <div class="ms-2">
-                                                <button class="btn btn-sm btn-outline-primary play-btn"
+                                                <button class="btn btn-sm btn-outline-primary play-btn mix-play-btn"
                                                         data-mix-uuid="{{ mix.uuid }}"
                                                         data-title="{{ mix.title }}"
-                                                        data-artist="{{ mix.artist }}">
+                                                        data-artist="{{ mix.artist }}"
+                                                        data-peaks-url="{{ mix.s3PeaksUrl ?? null }}"
+                                                        data-duration="{{ mix.duration }}">
                                                     <i class="bi bi-play-circle-fill"></i>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {# ВОЛНА - статичная SVG из peaks #}
                                         <div class="mt-auto">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <small class="text-muted">
                                                     <i class="bi bi-clock"></i>
-                                                    {{ mix.duration|default(0)|date('i:s') }}
+                                                    {{ mix.duration|duration }}
                                                 </small>
                                                 <div class="mix-controls">
                                                     <button class="btn btn-sm btn-link text-muted p-0 me-2 like-btn"
@@ -83,12 +93,22 @@
                                                 </div>
                                             </div>
 
-                                            {# Статичная волна #}
+                                            <div class="mix-progress-container">
+                                                <div class="mix-progress-bar" style="width: 0%;"></div>
+                                            </div>
+
                                             {% if mix.isProcessed %}
                                                 <div class="waveform-static"
-                                                     data-peaks-url="{{ mix.s3PeaksUrl }}"
-                                                     data-mix-id="{{ mix.id }}">
-                                                    <canvas class="waveform-canvas" height="40" style="width: 100%; height: 40px;"></canvas>
+                                                     data-mix-uuid="{{ mix.uuid }}"
+                                                     data-mix-id="{{ mix.id }}"
+                                                     data-peaks-url="{{ mix.s3PeaksUrl ?? null }}"
+                                                     style="position: relative; min-height: 32px; background: rgba(108, 99, 255, 0.04); border-radius: 6px; padding: 2px 0; overflow: hidden;">
+                                                    <canvas class="waveform-canvas" height="32" style="width: 100%; height: 32px; display: block;"></canvas>
+                                                    <div class="waveform-click-overlay"
+                                                         data-mix-uuid="{{ mix.uuid }}"
+                                                         style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: pointer; z-index: 2; border-radius: 6px;"></div>
+                                                    <div class="waveform-progress-overlay"
+                                                         style="position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: rgba(108, 99, 255, 0.12); border-radius: 6px; pointer-events: none; transition: width 0.1s linear; z-index: 1;"></div>
                                                 </div>
                                             {% else %}
                                                 <div class="text-center text-muted py-2">
@@ -105,201 +125,4 @@
             </div>
         {% endif %}
     </div>
-
-    <style>
-        .mix-card {
-            transition: all 0.3s ease;
-            border: 1px solid var(--color-border);
-            background: var(--color-card);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .mix-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-        }
-
-        .mix-cover-wrapper {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .mix-cover {
-            width: 100%;
-            height: 100%;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .mix-cover-content {
-            text-align: center;
-            color: white;
-        }
-
-        .mix-cover-icon {
-            font-size: 3rem;
-            display: block;
-        }
-
-        .mix-duration {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0,0,0,0.7);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: white;
-        }
-
-        .play-btn {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            transition: all 0.2s ease;
-        }
-
-        .play-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .waveform-static {
-            min-height: 40px;
-            background: rgba(108, 99, 255, 0.05);
-            border-radius: 8px;
-            padding: 2px 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .waveform-static:hover {
-            background: rgba(108, 99, 255, 0.1);
-        }
-
-        .mix-controls .btn-link {
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-        }
-
-        .mix-controls .btn-link:hover {
-            color: #6c63ff !important;
-            transform: scale(1.1);
-        }
-    </style>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script type="module">
-        console.log('✅ Index page loaded');
-
-        function renderWaveform(canvas, peaksData) {
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-
-            ctx.clearRect(0, 0, width, height);
-
-            if (!peaksData || !peaksData.data || peaksData.data.length === 0) {
-                return;
-            }
-
-            const data = peaksData.data;
-            const step = Math.max(1, Math.floor(data.length / width));
-            const middle = height / 2;
-
-            ctx.fillStyle = '#6c63ff';
-            ctx.fillRect(0, 0, width, height);
-
-            for (let i = 0; i < width; i++) {
-                const index = i * step;
-                if (index >= data.length) break;
-
-                const value = data[index] / 100;
-                const barHeight = Math.min(value * height / 2, middle);
-
-                ctx.fillStyle = '#6c63ff';
-                if (barHeight > 0) {
-                    ctx.fillRect(i, middle - barHeight, 1, barHeight);
-                    ctx.fillRect(i, middle, 1, barHeight);
-                }
-            }
-        }
-
-        async function initWaveforms() {
-            const containers = document.querySelectorAll('.waveform-static');
-
-            for (const container of containers) {
-                const canvas = container.querySelector('.waveform-canvas');
-                const peaksUrl = container.dataset.peaksUrl;
-
-                if (!canvas || !peaksUrl) continue;
-
-                // Устанавливаем размеры canvas
-                const rect = container.getBoundingClientRect();
-                canvas.width = rect.width || 400;
-                canvas.height = 40;
-
-                try {
-                    const response = await fetch(peaksUrl);
-                    if (!response.ok) throw new Error('Failed to fetch peaks');
-                    const data = await response.json();
-
-                    renderWaveform(canvas, data);
-                } catch (error) {
-                    console.warn('Failed to load peaks:', error);
-                    // Рисуем заглушку
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = 'rgba(108, 99, 255, 0.2)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-            }
-        }
-
-        // Инициализация
-        document.addEventListener('turbo:load', () => setTimeout(initWaveforms, 200));
-        document.addEventListener('DOMContentLoaded', () => setTimeout(initWaveforms, 200));
-
-        // Обработчик для кнопок воспроизведения
-        document.addEventListener('click', function(e) {
-            const playBtn = e.target.closest('.play-btn');
-            if (!playBtn) return;
-
-            e.preventDefault();
-
-            const mixUuid = playBtn.dataset.mixUuid;
-            const title = playBtn.dataset.title || 'Без названия';
-            const artist = playBtn.dataset.artist || 'Неизвестный исполнитель';
-
-            if (window.player) {
-                // Получаем подписанную ссылку
-                fetch(`/api/stream/${mixUuid}`)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Failed to get stream URL');
-                        return response.json();
-                    })
-                    .then(data => {
-                        window.player.loadTrack(mixUuid, data.url, null, title, artist);
-                        setTimeout(() => window.player.play(), 100);
-                    })
-                    .catch(error => {
-                        console.error('Stream error:', error);
-                        alert('Не удалось загрузить трек');
-                    });
-            }
-        });
-    </script>
 {% endblock %}
