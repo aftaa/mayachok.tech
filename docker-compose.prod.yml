@@ -1,11 +1,14 @@
+version: '3.8'
+
 services:
     nginx:
         image: nginx:1.29.8-alpine
         ports:
-            - "49020:80"   # 👈 оставляем
+            - "49020:80"
         volumes:
             - ./docker/nginx/conf:/etc/nginx/conf.d:ro
             - ./docker/nginx/logs:/var/log/nginx
+            - public_assets:/var/www/tech/public:ro
         depends_on:
             php:
                 condition: service_started
@@ -18,23 +21,77 @@ services:
             target: production
         volumes:
             - ./docker/php/supervisor/logs:/var/log/supervisor
-            - ./docker/php/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf:ro
-            - ./docker/php/supervisor/conf:/etc/supervisor/conf.d:ro
+            - public_assets:/var/www/tech/public
         environment:
             APP_ENV: prod
             APP_DEBUG: 0
+            APP_SECRET: ${APP_SECRET}
+            DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=9.7.1&charset=utf8mb4"
+            REDIS_URL: "redis://redis:6379"
+            MERCURE_URL: "http://mercure/.well-known/mercure"
+            MERCURE_PUBLIC_URL: "${MERCURE_PUBLIC_URL}"
+            MERCURE_JWT_SECRET: "${MERCURE_JWT_SECRET}"
+            MESSENGER_TRANSPORT_DSN: "redis://redis:6379/messages"
+            S3_KEY: ${S3_KEY}
+            S3_SECRET: ${S3_SECRET}
+            S3_BUCKET: ${S3_BUCKET}
+            S3_ENDPOINT: ${S3_ENDPOINT}
+            S3_REGION: ${S3_REGION}
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         restart: always
 
     mysql:
         image: mysql:9.7.1
         ports:
-            - "49021:3306"   # 👈 оставляем
+            - "49021:3306" # 👈 Возвращаем порт для прямого подключения
         volumes:
-            - ./docker/mysql/data:/var/lib/mysql
-            - ./docker/mysql/init:/docker-entrypoint-initdb.d
+            - mysql_data:/var/lib/mysql
+            - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
         environment:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
             MYSQL_DATABASE: ${MYSQL_DATABASE}
             MYSQL_USER: ${MYSQL_USER}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+            start_period: 15s
         restart: always
+
+    redis:
+        image: redis:8.6-alpine3.23
+        ports:
+            - "49023:6379" # 👈 Возвращаем порт Redis
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        restart: always
+
+    mercure:
+        image: dunglas/mercure
+        ports:
+            - "49022:80" # 👈 Добавили порт для проксирования с главного Nginx (127.0.0.1:49022)
+        environment:
+            SERVER_NAME: ':80'
+            MERCURE_PUBLISHER_JWT_KEY: '${MERCURE_JWT_SECRET}'
+            MERCURE_SUBSCRIBER_JWT_KEY: '${MERCURE_JWT_SECRET}'
+            MERCURE_EXTRA_DIRECTIVES: |
+                cors_origins "${CORS_ORIGINS:-*}"
+                anonymous 1
+                subscriptions 1
+        restart: always
+
+volumes:
+    mysql_data:
+    redis_data:
+    public_assets:

@@ -159,3 +159,13 @@ text:
 		find . -name "Makefile" -print0 ; \
 		find . -name "importmap.php" -print0 ; \
 	} | xargs -0 -I {} sh -c 'echo "=== {} ===" && cat "{}" && echo ""' > /home/max/www/tech.code.txt
+
+deploy: ## 🚀 Деплой на продакшен
+	@echo "🔍 Проверка готовности к деплою..."
+	docker compose exec -u appuser php symfony console app:deploy:check
+	@echo "✅ Проверка пройдена, деплоим..."
+	git pull origin main
+	docker compose -f docker-compose.prod.yml build
+	docker compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml exec -T php symfony console doctrine:migrations:migrate --no-interaction
+	docker compose -f docker-compose.prod.yml exec -T php symfony console cache:clear
