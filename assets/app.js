@@ -48,29 +48,39 @@ document.addEventListener('DOMContentLoaded', function () {
 // ИНИЦИАЛИЗАЦИЯ СТРАНИЦ
 // ==========================================
 
-function initPage() {
+// ✅ Динамический импорт
+async function initPage() {
     console.log('🔄 Инициализация страницы...');
 
-    // Проверяем, какая страница загружена
+    // ✅ Страница микса
     if (document.getElementById('mix-show')) {
-        initMixShow();
-    } else if (document.querySelector('.mix-card')) {
-        initMixList();
+        try {
+            const { initMixShow } = await import('./mix.show.js');
+            initMixShow();
+        } catch (error) {
+            console.error('❌ Ошибка загрузки mix.show.js:', error);
+        }
+        return;
+    }
+
+    // ✅ Список миксов
+    if (document.querySelector('.mix-card')) {
+        try {
+            const { initMixList } = await import('./mix.list.js');
+            initMixList();
+        } catch (error) {
+            console.error('❌ Ошибка загрузки mix.list.js:', error);
+        }
     }
 }
 
-// ✅ Обычная загрузка
-document.addEventListener('DOMContentLoaded', () => {
+// ✅ ТОЛЬКО turbo:load (срабатывает и при первой загрузке, и при переходах)
+document.addEventListener('turbo:load', () => {
+    console.log('🔄 turbo:load');
     setTimeout(initPage, 100);
 });
 
-// ✅ Turbo-переходы
-document.addEventListener('turbo:load', () => {
-    console.log('🔄 turbo:load');
-    setTimeout(initPage, 150);
-});
-
-// ✅ Если страница уже загружена
+// ✅ Если Turbo не загрузился (страховка)
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(initPage, 200);
 }

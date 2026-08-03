@@ -13,6 +13,7 @@ final readonly class UploadCommand
         public User         $user,
         public string       $title,
         public string       $artist,
+        public bool         $isPrivate,
     ) {
     }
 }

@@ -1,5 +1,3 @@
-// assets/mix.show.js
-
 console.log('🎵 mix.show.js загружен');
 
 import WaveSurfer from 'wavesurfer.js';
@@ -14,16 +12,16 @@ function formatTime(seconds) {
 let isMixShowInitialized = false;
 
 export function initMixShow() {
+    // ✅ Сбрасываем флаг при каждом вызове (для Turbo)
+    if (isMixShowInitialized) {
+        console.log('ℹ️ Страница микса уже инициализирована, сбрасываем');
+        isMixShowInitialized = false;
+    }
+
     const container = document.getElementById('mix-show');
     if (!container) {
         console.warn('⚠️ Контейнер #mix-show не найден');
         return;
-    }
-
-    // ✅ Защита от повторной инициализации
-    if (isMixShowInitialized) {
-        console.log('ℹ️ Страница микса уже инициализирована');
-        //return;
     }
 
     const mixUuid = container.dataset.mixUuid;
@@ -40,14 +38,24 @@ export function initMixShow() {
         return;
     }
 
-    // ✅ ВСЕГДА СОЗДАЁМ ВОЛНУ на странице микса
     const waveformContainer = document.getElementById('mix-show-waveform');
     if (!waveformContainer) {
         console.warn('⚠️ Контейнер #mix-show-waveform не найден');
         return;
     }
 
-    // ✅ Очищаем контейнер, если там уже есть волна
+    // ✅ УНИЧТОЖАЕМ СТАРЫЙ ИНСТАНС WaveSurfer
+    if (window.player._mixShowWaveform) {
+        try {
+            console.log('🧹 Уничтожаем старый WaveSurfer');
+            window.player._mixShowWaveform.destroy();
+        } catch (e) {
+            console.warn('Ошибка при уничтожении WaveSurfer:', e);
+        }
+        window.player._mixShowWaveform = null;
+    }
+
+    // ✅ Очищаем контейнер
     waveformContainer.innerHTML = '';
 
     // ✅ Создаём волну
@@ -67,7 +75,7 @@ export function initMixShow() {
         dragToSeek: false,
     });
 
-    // ✅ Загружаем аудио в волну
+    // ✅ Загружаем аудио
     if (peaksUrl) {
         fetch(peaksUrl)
             .then(r => r.json())
@@ -86,7 +94,7 @@ export function initMixShow() {
     // ✅ Сохраняем волну в глобальном плеере
     window.player._mixShowWaveform = ws;
 
-    // ✅ Если это новый трек — загружаем его в плеер
+    // ✅ Если это новый трек — загружаем в плеер
     if (window.player.trackId !== mixUuid) {
         window.player.loadTrack(mixUuid, audioUrl, peaksUrl, title, artist, duration);
     }
@@ -125,7 +133,6 @@ export function initMixShow() {
             if (timeEl) {
                 timeEl.textContent = formatTime(data.currentTime) + ' / ' + formatTime(data.duration);
             }
-            // ✅ Синхронизируем волну на странице с плеером
             if (window.player._mixShowWaveform) {
                 const progress = data.progress || 0;
                 window.player._mixShowWaveform.seekTo(progress / 100);
@@ -188,22 +195,21 @@ export function initMixShow() {
         window.player.seek(progress);
     });
 
-    // ✅ Если плеер уже играет этот трек — синхронизируем UI
-    if (window.player.trackId === mixUuid && window.player.isPlaying) {
-        const progress = window.player.getProgress();
-        if (progressBar) {
-            progressBar.style.width = progress + '%';
-        }
-        if (timeEl) {
-            timeEl.textContent = formatTime(window.player.getCurrentTime()) + ' / ' + formatTime(window.player.getDuration());
-        }
-        // ✅ Синхронизируем волну
-        if (window.player._mixShowWaveform) {
-            window.player._mixShowWaveform.seekTo(progress / 100);
-        }
-        if (playBtn) {
-            playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-            playBtn.classList.add('playing');
+    // ✅ Синхронизация UI, если трек уже играет
+    if (window.player.trackId === mixUuid) {
+        if (window.player.isPlaying) {
+            const progress = window.player.getProgress();
+            if (progressBar) progressBar.style.width = progress + '%';
+            if (timeEl) {
+                timeEl.textContent = formatTime(window.player.getCurrentTime()) + ' / ' + formatTime(window.player.getDuration());
+            }
+            if (window.player._mixShowWaveform) {
+                window.player._mixShowWaveform.seekTo(progress / 100);
+            }
+            if (playBtn) {
+                playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+                playBtn.classList.add('playing');
+            }
         }
     }
 

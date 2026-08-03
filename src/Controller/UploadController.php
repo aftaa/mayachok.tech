@@ -64,6 +64,7 @@ class UploadController extends AbstractController
         $file = $request->files->get('file');
         $title = $request->getPayload()->get('title') ?: 'Без названия';
         $artist = $request->getPayload()->get('artist') ?: 'Неизвестный исполнитель';
+        $isPrivate = $request->getPayload()->get('is_private', false);
 
         if (!$file) {
             return $this->json(['error' => true, 'message' => 'Файл не загружен'], 400);
@@ -80,7 +81,7 @@ class UploadController extends AbstractController
         $uploadDir = $this->getParameter('kernel.project_dir') . '/var/uploads';
 
         try {
-            $uploadResult = $this->commandBus->dispatch(new UploadCommand($uploadDir, $file, $user, $title, $artist));
+            $uploadResult = $this->commandBus->dispatch(new UploadCommand($uploadDir, $file, $user, $title, $artist, $isPrivate));
             $this->messageBus->dispatch(new ProcessMixMessage(...$uploadResult));
 
             return $this->json([

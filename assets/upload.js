@@ -6,8 +6,23 @@ window.subscribeToProgress = function(mixId) {
     const progressPercent = document.getElementById('progress-percent');
     const resultMessage = document.getElementById('result-message');
 
-    // Проверяем, что Mercure доступен
-    const eventSource = new EventSource(`/.well-known/mercure?topic=mix/progress/${mixId}`);
+    // ✅ Сохраняем ссылку на EventSource для закрытия
+    let eventSource = new EventSource(`/.well-known/mercure?topic=mix/progress/${mixId}`);
+
+    // ✅ Сохраняем таймаут для переподключения
+    let reconnectTimeout = null;
+
+    // ✅ Функция закрытия соединения
+    function closeConnection() {
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+        }
+    }
 
     eventSource.onopen = function() {
         console.log('✅ EventSource открыт для микса #' + mixId);
@@ -26,7 +41,13 @@ window.subscribeToProgress = function(mixId) {
                 progressBar.textContent = '0%';
                 progressPercent.textContent = '0%';
                 resultMessage.innerHTML = `<div class="alert alert-danger">${data.status}</div>`;
-                eventSource.close();
+                closeConnection();
+                // ✅ Разблокируем кнопку при ошибке
+                const submitBtn = document.getElementById('uploadBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Загрузить';
+                }
                 return;
             }
 
@@ -40,7 +61,18 @@ window.subscribeToProgress = function(mixId) {
             if (percent >= 100) {
                 progressLabel.textContent = '✅ Готово!';
                 resultMessage.innerHTML = '<div class="alert alert-success">Микс обработан!</div>';
-                eventSource.close();
+                closeConnection();
+                // ✅ Разблокируем кнопку
+                const submitBtn = document.getElementById('uploadBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Загрузить';
+
+                    document.getElementById('mixFile').value = '';
+                    document.getElementById('title').value = '';
+                    document.getElementById('artist').value = '';
+                    document.getElementById('isPrivate').checked = false;
+                }
             }
         } catch (error) {
             console.error('❌ Ошибка парсинга сообщения:', error);
@@ -49,8 +81,10 @@ window.subscribeToProgress = function(mixId) {
 
     eventSource.onerror = function (error) {
         console.error('❌ EventSource ошибка:', error);
-        // Пробуем переподключиться через 3 секунды
-        setTimeout(() => {
+        closeConnection();
+
+        // ✅ Переподключаемся с новой ссылкой
+        reconnectTimeout = setTimeout(() => {
             console.log('🔄 Переподключаемся...');
             window.subscribeToProgress(mixId);
         }, 3000);
@@ -79,6 +113,11 @@ document.addEventListener('submit', function (e) {
         const file = fileInput.files[0];
         if (!file) {
             resultMessage.innerHTML = '<div class="alert alert-warning">Выберите файл</div>';
+            // ✅ Разблокируем кнопку
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Загрузить';
+            }
             return;
         }
 
@@ -106,6 +145,12 @@ document.addEventListener('submit', function (e) {
         xhr.onload = function () {
             console.log('📨 Ответ от сервера:', xhr.status, xhr.responseText);
 
+            // ✅ Разблокируем кнопку в любом случае
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Загрузить';
+            }
+
             if (xhr.status === 200) {
                 try {
                     const response = JSON.parse(xhr.responseText);
@@ -120,11 +165,14 @@ document.addEventListener('submit', function (e) {
 
                         resultMessage.innerHTML = '<div class="alert alert-info">Файл загружен, идёт обработка...</div>';
 
-                        // Вызываем глобальную функцию
                         if (typeof window.subscribeToProgress === 'function') {
                             window.subscribeToProgress(response.mixId);
                         } else {
                             console.error('❌ Функция subscribeToProgress не найдена');
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Загрузить';
+                            }
                         }
                     }
                 } catch (err) {
@@ -149,6 +197,12 @@ document.addEventListener('submit', function (e) {
             console.error('❌ Ошибка сети');
             progressBar.className = 'progress-bar bg-danger';
             resultMessage.innerHTML = '<div class="alert alert-danger">Ошибка сети</div>';
+
+            // ✅ Разблокируем кнопку при ошибке сети
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Загрузить';
+            }
         };
 
         xhr.open('POST', form.action);

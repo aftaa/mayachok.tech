@@ -38,6 +38,7 @@ final readonly class UploadHandler
         $mix->setOriginalPath('/var/uploads/' . $filename);
         $mix->setIsProcessed(false);
         $mix->setUser($command->user);
+        $mix->setIsPrivate($command->isPrivate);
         $this->mixRepository->save($mix);
 
         return [

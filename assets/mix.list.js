@@ -42,6 +42,10 @@ async function initWaveforms() {
     const containers = document.querySelectorAll('.waveform-static:not([data-waveform-initialized])');
     console.log(`📦 Рендеринг волн: ${containers.length} шт.`);
 
+    // ✅ Используем requestAnimationFrame для синхронизации с рендерингом
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
     for (const container of containers) {
         const canvas = container.querySelector('.waveform-canvas');
         const peaksUrl = container.dataset.peaksUrl;
@@ -50,14 +54,15 @@ async function initWaveforms() {
 
         container.dataset.waveformInitialized = 'true';
 
-        let attempts = 0;
-        let width = 0;
+        // ✅ Один раз получаем ширину без цикла
+        const rect = container.getBoundingClientRect();
+        let width = rect.width || container.clientWidth || container.offsetWidth || 400;
 
-        while (attempts < 5 && width === 0) {
-            await new Promise(resolve => setTimeout(resolve, 50 * (attempts + 1)));
-            const rect = container.getBoundingClientRect();
-            width = rect.width || container.clientWidth || container.offsetWidth || 400;
-            attempts++;
+        // ✅ Если ширина 0 — даём ещё один шанс через requestAnimationFrame
+        if (width === 0) {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            const newRect = container.getBoundingClientRect();
+            width = newRect.width || container.clientWidth || container.offsetWidth || 400;
         }
 
         if (width === 0) {
