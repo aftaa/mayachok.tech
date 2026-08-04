@@ -88,7 +88,7 @@ RUN composer run-script post-install-cmd --no-interaction || true \
 # ==========================================
 FROM base AS prod
 ARG APP_DIR
-RUN apt-get install -y --no-install-recommends libicu libzip
+RUN apt-get install -y --no-install-recommends libicu76 libzip5
 RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
 COPY --from=prod-builder --chown=appuser:appgroup ${APP_DIR} ${APP_DIR}
 RUN rm -f /usr/local/bin/composer
