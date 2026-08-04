@@ -88,8 +88,12 @@ RUN composer run-script post-install-cmd --no-interaction || true \
 # ==========================================
 FROM base AS prod
 ARG APP_DIR
+
 RUN apt-get install -y --no-install-recommends libicu76 libzip5
 RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
+
 COPY --from=prod-builder --chown=appuser:appgroup ${APP_DIR} ${APP_DIR}
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
 RUN rm -f /usr/local/bin/composer
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
