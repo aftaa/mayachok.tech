@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="tech@localhost" uuid="0585a9e5-1e56-4c06-b766-aeba30066a2e">
+    <data-source source="LOCAL" name="LOCAL" uuid="0585a9e5-1e56-4c06-b766-aeba30066a2e">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://localhost:49021/tech</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="tech@vps1.data-files.ru" uuid="18cc3ecd-4e66-4697-aa6c-9d05386aec80">
+    <data-source source="LOCAL" name="FORNEX" uuid="18cc3ecd-4e66-4697-aa6c-9d05386aec80">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://vps1.data-files.ru:49021/tech</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="tech@vps5.data-files.ru" uuid="ad36c7cb-a6f7-456f-b90c-d90cc4f0aee1">
+    <data-source source="LOCAL" name="TIMEWEB" uuid="ad36c7cb-a6f7-456f-b90c-d90cc4f0aee1">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>

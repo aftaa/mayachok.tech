@@ -17,8 +17,8 @@ services:
     php:
         build:
             context: .
-            dockerfile: ./docker/php/Dockerfile
-            target: production
+            dockerfile: docker/php/Dockerfile
+            target: prod
         volumes:
             - ./docker/php/supervisor/logs:/var/log/supervisor
             - public_assets:/var/www/tech/public
@@ -32,11 +32,6 @@ services:
             MERCURE_PUBLIC_URL: "${MERCURE_PUBLIC_URL}"
             MERCURE_JWT_SECRET: "${MERCURE_JWT_SECRET}"
             MESSENGER_TRANSPORT_DSN: "redis://redis:6379/messages"
-            S3_KEY: ${S3_KEY}
-            S3_SECRET: ${S3_SECRET}
-            S3_BUCKET: ${S3_BUCKET}
-            S3_ENDPOINT: ${S3_ENDPOINT}
-            S3_REGION: ${S3_REGION}
         depends_on:
             mysql:
                 condition: service_healthy
