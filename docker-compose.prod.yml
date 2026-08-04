@@ -40,7 +40,7 @@ services:
         restart: always
 
     mysql:
-        image: mysql:9.7.1
+        image: mysql:9.7.2
         ports:
             - "49021:3306" # 👈 Возвращаем порт для прямого подключения
         volumes:

@@ -1,5 +1,8 @@
 ARG APP_DIR=/var/www/tech
 
+# ==========================================
+# STAGE 1: AUDIOWAVEFORM BUILDER
+# ==========================================
 FROM php:8.5-fpm AS audiowaveform-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,16 +20,16 @@ RUN git clone https://github.com/bbc/audiowaveform /tmp/audiowaveform \
 
 
 
-FROM php:8.5-fpm AS dev
+# ==========================================
+# STAGE 2: BASE
+# ==========================================
+FROM php:8.5-fpm AS base
 ARG APP_DIR
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends curl git mc unzip supervisor procps ffmpeg sox
-RUN apt-get install -y --no-install-recommends libicu-dev libzip-dev
-RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
-RUN pecl install redis && docker-php-ext-enable redis
-
 RUN apt-get install -y libgd3 libmad0 libid3tag0 libboost-program-options1.83.0 libboost-filesystem1.83.0
+RUN pecl install redis && docker-php-ext-enable redis
 
 COPY --link --from=ghcr.io/symfony-cli/symfony-cli:latest /usr/local/bin/symfony /usr/local/bin/symfony
 COPY --from=audiowaveform-builder /tmp/audiowaveform/build/audiowaveform /usr/local/bin/audiowaveform
@@ -48,7 +51,45 @@ RUN sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/g' /etc/skel/.bashr
     && cp /etc/skel/.bashrc /root/.bashrc
 
 RUN mkdir -p /var/log/php-fpm && chown -R appuser:appgroup /var/log/php-fpm
-
 WORKDIR ${APP_DIR}
 
+
+
+# ==========================================
+# STAGE 3: DEV
+# ==========================================
+FROM base AS dev
+ARG APP_DIR
+RUN apt-get install -y --no-install-recommends libicu-dev libzip-dev
+RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+
+
+
+# ==========================================
+# STAGE 4: PROD BUILDER
+# ==========================================
+FROM base AS prod-builder
+ARG APP_DIR
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+COPY . .
+RUN composer run-script post-install-cmd --no-interaction || true \
+    && php bin/console cache:clear --env=prod \
+    && php bin/console cache:warmup --env=prod \
+    && chown -R appuser:appgroup ${APP_DIR}
+
+
+
+# ==========================================
+# STAGE: PROD
+# ==========================================
+FROM base AS prod
+ARG APP_DIR
+RUN apt-get install -y --no-install-recommends libicu libzip
+RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
+COPY --from=prod-builder --chown=appuser:appgroup ${APP_DIR} ${APP_DIR}
+RUN rm -f /usr/local/bin/composer
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
