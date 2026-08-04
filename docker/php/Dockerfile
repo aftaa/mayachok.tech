@@ -35,6 +35,9 @@ COPY --link --from=ghcr.io/symfony-cli/symfony-cli:latest /usr/local/bin/symfony
 COPY --from=audiowaveform-builder /tmp/audiowaveform/build/audiowaveform /usr/local/bin/audiowaveform
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
+RUN apt-get install -y --no-install-recommends libicu-dev libzip-dev
+RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
+
 COPY docker/php/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
@@ -60,8 +63,6 @@ WORKDIR ${APP_DIR}
 # ==========================================
 FROM base AS dev
 ARG APP_DIR
-RUN apt-get install -y --no-install-recommends libicu-dev libzip-dev
-RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
 
 
@@ -88,9 +89,6 @@ RUN composer run-script post-install-cmd --no-interaction || true \
 # ==========================================
 FROM base AS prod
 ARG APP_DIR
-
-RUN apt-get install -y --no-install-recommends libicu76 libzip5
-RUN docker-php-ext-install -j$(nproc) intl pdo pdo_mysql zip
 
 COPY --from=prod-builder --chown=appuser:appgroup ${APP_DIR} ${APP_DIR}
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
