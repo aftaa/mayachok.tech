@@ -18,6 +18,7 @@ services:
             dockerfile: docker/php/Dockerfile
             target: prod
         volumes:
+            - ./docker/php/supervisor/conf:/etc/supervisor/conf.d
             - ./docker/php/supervisor/logs:/var/log/supervisor
             - public_assets:/var/www/tech/public
         environment:

@@ -77,7 +77,7 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 COPY . .
-RUN composer run-script post-install-cmd --no-interaction || true \
+RUN composer run-script post-install-cmd --no-interaction \
     && php bin/console cache:clear --env=prod \
     && php bin/console cache:warmup --env=prod \
     && chown -R appuser:appgroup ${APP_DIR}
