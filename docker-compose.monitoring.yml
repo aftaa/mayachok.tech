@@ -1,0 +1,43 @@
+services:
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: prometheus
+        volumes:
+            - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+            - prometheus_data:/prometheus
+        ports:
+            - "49025:9090"
+        restart: unless-stopped
+
+    node-exporter:
+        image: prom/node-exporter:latest
+        container_name: node-exporter
+        ports:
+            - "49026:9100"
+        restart: unless-stopped
+
+    cadvisor:
+        image: gcr.io/cadvisor/cadvisor:latest
+        container_name: cadvisor
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:ro
+            - /sys:/sys:ro
+            - /var/lib/docker/:/var/lib/docker:ro
+            - /dev/disk/:/dev/disk:ro
+        ports:
+            - "49027:8080"
+        restart: unless-stopped
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        volumes:
+            - grafana_data:/var/lib/grafana
+        ports:
+            - "49028:3000"
+        restart: unless-stopped
+
+volumes:
+    prometheus_data:
+    grafana_data:

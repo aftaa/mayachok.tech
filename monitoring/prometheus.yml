@@ -1,0 +1,15 @@
+global:
+    scrape_interval: 15s
+
+scrape_configs:
+    - job_name: 'node'
+      static_configs:
+          - targets: ['node-exporter:9100']
+
+    - job_name: 'docker'
+      static_configs:
+          - targets: ['cadvisor:8080']
+
+    - job_name: 'php'
+      static_configs:
+          - targets: ['php:9182']  # если добавишь PHP-FPM exporter
