@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Legacy\Message\Query\Mix;
+
+use App\Infrastructure\Doctrine\Entity\Mix;
+use App\Legacy\Repository\MixRepository;
+use App\Legacy\Service\S3Uploader;
+use App\Legacy\Specification\PublicMixesSpecification;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+
+#[AsMessageHandler(bus: 'query.bus')]
+readonly class GetIndexMixesHandler
+{
+    public function __construct(
+        private MixRepository $mixRepository,
+        private S3Uploader    $s3Uploader,
+    ) {
+    }
+
+    /**
+     * @return list<Mix>
+     */
+    public function __invoke(GetIndexMixesQuery $query): array
+    {
+        $mixes = $this->mixRepository->findMatches(new PublicMixesSpecification());
+
+        return array_map(function ($mix) {
+            return [
+                'id' => $mix->getId(),
+                'uuid' => $mix->getUuid(),
+                'title' => $mix->getTitle(),
+                'artist' => $mix->getArtist(),
+                'duration' => $mix->getDuration(),
+                's3StreamUrl' => $this->s3Uploader->getPublicUrl($mix->getS3StreamKey()),
+                's3PeaksUrl' => $mix->getPeaksKey()
+                    ? $this->s3Uploader->getPublicUrl($mix->getPeaksKey())
+                    : null,
+                'isProcessed' => $mix->isProcessed(),
+            ];
+        }, $mixes);
+    }
+}

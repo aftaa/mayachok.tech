@@ -14,19 +14,29 @@ parameters:
     s3.region: '%env(S3_REGION)%'
 
 services:
-    # default configuration for services in *this* file
     _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: true
+        autoconfigure: true
 
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/Legacy/'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+#    App\Service\UploadLimiter:
+#        arguments:
+#            $redisDsn: '%env(REDIS_URL)%/2'
 
-    App\Service\UploadLimiter:
+    # 👇 Автоматически регистрируем ВСЕ адаптеры с тегом
+    App\Infrastructure\Mix\Doctrine\Specification\DoctrineSpecificationInterface:
+        tags:
+            - { name: 'app.doctrine.specification_adapter' }
+
+    # 👇 Собираем все адаптеры в итератор
+    App\Infrastructure\Mix\Doctrine\Specification\SpecificationAdapterFactory:
         arguments:
-            $redisDsn: '%env(REDIS_URL)%/2'
+            $adapters: !tagged_iterator 'app.doctrine.specification_adapter'
+
+    # 👇 Репозиторий
+    App\Domain\Mix\Repository\MixRepositoryInterface:
+        class: App\Infrastructure\Mix\Doctrine\Repository\DoctrineMixRepository

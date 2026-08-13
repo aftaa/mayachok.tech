@@ -2,8 +2,8 @@
 
 namespace App\Tests\Controller;
 
-use App\Entity\Mix;
-use App\Entity\User;
+use App\Infrastructure\Doctrine\Entity\Mix;
+use App\Infrastructure\Doctrine\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class IndexControllerTest extends WebTestCase

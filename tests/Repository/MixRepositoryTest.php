@@ -2,10 +2,10 @@
 
 namespace App\Tests\Repository;
 
-use App\Entity\Mix;
-use App\Entity\User;
-use App\Repository\MixRepository;
-use App\Specification\PublicMixesSpecification;
+use App\Infrastructure\Doctrine\Entity\Mix;
+use App\Infrastructure\Doctrine\Entity\User;
+use App\Legacy\Repository\MixRepository;
+use App\Legacy\Specification\PublicMixesSpecification;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
