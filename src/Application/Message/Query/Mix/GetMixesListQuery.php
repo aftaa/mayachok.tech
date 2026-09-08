@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Application\Query\Mix;
+namespace App\Application\Message\Query\Mix;
 
 class GetMixesListQuery
 {

@@ -1,11 +1,3 @@
-# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
-
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-# See also https://symfony.com/doc/current/service_container/import.html
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     s3.key: '%env(S3_KEY)%'
     s3.secret: '%env(S3_SECRET)%'
@@ -22,21 +14,36 @@ services:
         resource: '../src/'
         exclude:
             - '../src/Legacy/'
+            - '../src/Domain/Mix/Specification/'
+            - '../src/Infrastructure/Mix/Doctrine/Specification/Adapter/'
+            - '../src/Domain/User/ValueObject/UserId.php'
 
 #    App\Service\UploadLimiter:
 #        arguments:
 #            $redisDsn: '%env(REDIS_URL)%/2'
 
-    # 👇 Автоматически регистрируем ВСЕ адаптеры с тегом
-    App\Infrastructure\Mix\Doctrine\Specification\DoctrineSpecificationInterface:
-        tags:
-            - { name: 'app.doctrine.specification_adapter' }
+    _instanceof:
+#        App\Domain\Mix\Specification\SpecificationInterface:
+#            tags: ['app.doctrine.specification']
 
-    # 👇 Собираем все адаптеры в итератор
-    App\Infrastructure\Mix\Doctrine\Specification\SpecificationAdapterFactory:
-        arguments:
-            $adapters: !tagged_iterator 'app.doctrine.specification_adapter'
+        App\Application\Message\Command\CommandHandlerInterface:
+            tags:
+                - { name: messenger.message_handler, bus: command.bus }
 
-    # 👇 Репозиторий
+        App\Application\Message\Query\QueryHandlerInterface:
+            tags:
+                - { name: messenger.message_handler, bus: query.bus }
+
+        App\Application\Message\Event\EventHandlerInterface:
+            tags:
+                - { name: messenger.message_handler, bus: event.bus }
+
+#        App\Infrastructure\Mix\Doctrine\Specification\DoctrineSpecificationInterface:
+#            tags: ['app.doctrine.specification_adapter']
+
+#    App\Infrastructure\Mix\Doctrine\Specification\SpecificationAdapterFactory:
+#        arguments:
+#            $adapters: !tagged_iterator 'app.doctrine.specification_adapter'
+
     App\Domain\Mix\Repository\MixRepositoryInterface:
-        class: App\Infrastructure\Mix\Doctrine\Repository\DoctrineMixRepository
+        class: App\Infrastructure\Doctrine\Repository\MixRepository

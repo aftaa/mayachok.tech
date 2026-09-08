@@ -9,17 +9,8 @@ use App\Domain\Mix\Repository\MixRepositoryInterface;
 use App\Domain\Mix\Specification\SpecificationInterface;
 use App\Domain\Mix\ValueObject\MixId;
 use App\Infrastructure\Doctrine\Entity\Mix as MixDoctrine;
-use App\Infrastructure\Mix\Doctrine\Repository\ArtistName;
-use App\Infrastructure\Mix\Doctrine\Repository\DateTime;
-use App\Infrastructure\Mix\Doctrine\Repository\Duration;
-use App\Infrastructure\Mix\Doctrine\Repository\FileId;
-use App\Infrastructure\Mix\Doctrine\Repository\FileSize;
-use App\Infrastructure\Mix\Doctrine\Repository\MixStatus;
-use App\Infrastructure\Mix\Doctrine\Repository\MixTitle;
-use App\Infrastructure\Mix\Doctrine\Repository\TrackMetadata;
-use App\Infrastructure\Mix\Doctrine\Repository\UserId;
-use App\Infrastructure\Mix\Doctrine\Repository\Visibility;
-use App\Infrastructure\Mix\Doctrine\Specification\SpecificationAdapterFactory;
+use App\Infrastructure\Mix\Doctrine\Mapper\MixMapperInterface;
+use App\Infrastructure\Mix\Doctrine\Specification\Factory\SpecificationAdapterFactory;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -27,6 +18,7 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
 {
     public function __construct(
         ManagerRegistry $registry,
+        private readonly MixMapperInterface $mapper,
         private readonly SpecificationAdapterFactory $adapterFactory,
     ) {
         parent::__construct($registry, MixDoctrine::class);
@@ -38,7 +30,7 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
 
     public function save(Mix $mix): void
     {
-        $entity = $this->toDoctrineEntity($mix);
+        $entity = $this->mapper->toDoctrine($mix);
         $this->getEntityManager()->persist($entity);
         $this->getEntityManager()->flush();
     }
@@ -59,13 +51,13 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
     public function findById(MixId $id): ?Mix
     {
         $entity = $this->findDoctrineById($id);
-        return $entity !== null ? $this->toDomainEntity($entity) : null;
+        return $entity !== null ? $this->mapper->toDomain($entity) : null;
     }
 
     public function findByUuid(string $uuid): ?Mix
     {
         $entity = $this->findOneBy(['uuid' => $uuid]);
-        return $entity !== null ? $this->toDomainEntity($entity) : null;
+        return $entity !== null ? $this->mapper->toDomain($entity) : null;
     }
 
     /**
@@ -95,7 +87,7 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
         $results = $qb->getQuery()->getResult();
 
         return array_map(
-            fn(MixDoctrine $entity) => $this->toDomainEntity($entity),
+            fn(MixDoctrine $entity) => $this->mapper->toDomain($entity),
             $results
         );
     }
@@ -127,158 +119,15 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
 
     public function exists(MixId $id): bool
     {
-        $entity = $this->findDoctrineById($id);
-        return $entity !== null;
+        return $this->findDoctrineById($id) !== null;
     }
 
     // ========================================
-    // 3. ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ (ПРИВАТНЫЕ)
+    // 3. ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // ========================================
 
     private function findDoctrineById(MixId $id): ?MixDoctrine
     {
         return $this->findOneBy(['uuid' => $id->toString()]);
-    }
-
-    // ========================================
-    // 4. КОНВЕРТАЦИЯ DOMAIN ↔ DOCTRINE
-    // ========================================
-
-    private function toDoctrineEntity(Mix $mix): MixDoctrine
-    {
-        $entity = new MixDoctrine();
-
-        // Базовые свойства
-        $entity->setUuid($mix->getId()->toString());
-        $entity->setTitle($mix->getMetadata()->getTitle()->toString());
-        $entity->setArtist($mix->getMetadata()->getArtist()->toString());
-        $entity->setIsPrivate($mix->isPrivate());
-
-        // Статус
-        $entity->setStatus($mix->getStatus()->value);
-        $entity->setIsProcessed($mix->isReady());
-
-        // Файлы
-        if ($mix->getOriginalFileId() !== null) {
-            $entity->setOriginalPath($mix->getOriginalFileId()->toString());
-            $entity->setS3OriginalKey($mix->getOriginalFileId()->toString());
-        }
-
-        if ($mix->getStreamFileId() !== null) {
-            $entity->setS3StreamKey($mix->getStreamFileId()->toString());
-        }
-
-        if ($mix->getPeaksFileId() !== null) {
-            $entity->setPeaksKey($mix->getPeaksFileId()->toString());
-        }
-
-        // Размеры
-        if ($mix->getOriginalFileSize() !== null) {
-            $entity->setOriginalSize($mix->getOriginalFileSize()->toBytes());
-        }
-
-        if ($mix->getStreamFileSize() !== null) {
-            $entity->setMp3Size($mix->getStreamFileSize()->toBytes());
-        }
-
-        if ($mix->getPeaksFileSize() !== null) {
-            $entity->setPeaksSize($mix->getPeaksFileSize()->toBytes());
-        }
-
-        // Длительность
-        if ($mix->getDuration() !== null) {
-            $entity->setDuration($mix->getDuration()->toSeconds());
-        }
-
-        // Даты
-        $entity->setCreatedAt($mix->getCreatedAt()->toDateTimeImmutable());
-
-        if ($mix->getProcessedAt() !== null) {
-            $entity->setProcessedAt($mix->getProcessedAt()->toDateTimeImmutable());
-        }
-
-        // TODO: Связь с пользователем
-        // $user = $this->userRepository->findOneBy(['id' => $mix->getOwnerId()->toInt()]);
-        // $entity->setUser($user);
-
-        return $entity;
-    }
-
-    private function toDomainEntity(MixDoctrine $entity): Mix
-    {
-        // Собираем все параметры для restore()
-        $id = MixId::fromString($entity->getUuid());
-
-        $metadata = new TrackMetadata(
-            new MixTitle($entity->getTitle()),
-            new ArtistName($entity->getArtist())
-        );
-
-        // TODO: Получить UserId из связи
-        $ownerId = UserId::fromInt($entity->getUser()->getId());
-
-        $visibility = $entity->isPrivate()
-            ? Visibility::private()
-            : Visibility::public();
-
-        $status = match($entity->getStatus()) {
-            'pending' => MixStatus::PENDING,
-            'processing' => MixStatus::PROCESSING,
-            'ready' => MixStatus::READY,
-            'failed' => MixStatus::FAILED,
-            default => MixStatus::PENDING,
-        };
-
-        $originalFileId = $entity->getS3OriginalKey() !== null
-            ? FileId::fromString($entity->getS3OriginalKey())
-            : null;
-
-        $streamFileId = $entity->getS3StreamKey() !== null
-            ? FileId::fromString($entity->getS3StreamKey())
-            : null;
-
-        $peaksFileId = $entity->getPeaksKey() !== null
-            ? FileId::fromString($entity->getPeaksKey())
-            : null;
-
-        $originalFileSize = $entity->getOriginalSize() !== null
-            ? new FileSize($entity->getOriginalSize())
-            : null;
-
-        $streamFileSize = $entity->getMp3Size() !== null
-            ? new FileSize($entity->getMp3Size())
-            : null;
-
-        $peaksFileSize = $entity->getPeaksSize() !== null
-            ? new FileSize($entity->getPeaksSize())
-            : null;
-
-        $duration = $entity->getDuration() !== null
-            ? new Duration($entity->getDuration())
-            : null;
-
-        $createdAt = DateTime::fromDateTimeImmutable($entity->getCreatedAt());
-
-        $processedAt = $entity->getProcessedAt() !== null
-            ? DateTime::fromDateTimeImmutable($entity->getProcessedAt())
-            : null;
-
-        // Восстанавливаем микс
-        return Mix::restore(
-            $id,
-            $metadata,
-            $ownerId,
-            $visibility,
-            $status,
-            $originalFileId,
-            $streamFileId,
-            $peaksFileId,
-            $originalFileSize,
-            $streamFileSize,
-            $peaksFileSize,
-            $duration,
-            $createdAt,
-            $processedAt,
-        );
     }
 }

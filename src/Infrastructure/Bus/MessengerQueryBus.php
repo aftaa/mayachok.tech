@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Bus;
 
-use App\Application\Bus\QueryBusInterface;
+use App\Application\Message\Bus\QueryBusInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\HandledStamp;

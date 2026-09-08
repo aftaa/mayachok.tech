@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Mix\Doctrine\Specification;
+namespace App\Infrastructure\Mix\Doctrine\Specification\Adapter;
 
-use App\Domain\Mix\Specification\OrSpecification;
+use App\Domain\Mix\Specification\AndSpecification;
+use App\Infrastructure\Mix\Doctrine\Specification\Contract\DoctrineSpecificationInterface;
+use App\Infrastructure\Mix\Doctrine\Specification\Factory\SpecificationAdapterFactory;
 
-final class OrSpecificationAdapter implements DoctrineSpecificationInterface
+final class AndSpecificationAdapter implements DoctrineSpecificationInterface
 {
     /**
      * @var DoctrineSpecificationInterface[]
@@ -14,7 +16,7 @@ final class OrSpecificationAdapter implements DoctrineSpecificationInterface
     private array $adapters = [];
 
     public function __construct(
-        private readonly OrSpecification $specification,
+        private readonly AndSpecification $specification,
         SpecificationAdapterFactory $factory,
     ) {
         foreach ($specification->getSpecifications() as $spec) {
@@ -35,7 +37,7 @@ final class OrSpecificationAdapter implements DoctrineSpecificationInterface
             return null;
         }
 
-        return '(' . implode(' OR ', $conditions) . ')';
+        return '(' . implode(' AND ', $conditions) . ')';
     }
 
     public function getParameters(): array

@@ -1,15 +1,13 @@
 <?php
 
-namespace App\Application\Query\Mix;
+namespace App\Application\Message\Query\Mix;
 
+use App\Application\Message\Query\QueryHandlerInterface;
 use App\Domain\Mix\Entity\Mix;
 use App\Domain\Mix\Repository\MixRepositoryInterface;
 use App\Domain\Mix\Specification\PublicMixesSpecification;
-use App\Shared\Bus\Buses;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AsMessageHandler(bus: Buses::Query->value)]
-class GitMixesListHandler
+class GetMixesListHandler implements QueryHandlerInterface
 {
     private MixRepositoryInterface $mixRepository;
 

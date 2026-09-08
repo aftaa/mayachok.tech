@@ -2,8 +2,8 @@
 
 namespace App\Presentation\Web\Controller;
 
-use App\Application\Bus\QueryBusInterface;
-use App\Application\Query\Mix\GetMixesListQuery;
+use App\Application\Message\Bus\QueryBusInterface;
+use App\Application\Message\Query\Mix\GetMixesListQuery;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

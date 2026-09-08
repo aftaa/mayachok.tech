@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Mix\Doctrine\Specification;
+namespace App\Infrastructure\Mix\Doctrine\Specification\Adapter;
 
 use App\Domain\Mix\Specification\FavoriteMixesSpecification;
+use App\Infrastructure\Mix\Doctrine\Specification\Contract\DoctrineSpecificationInterface;
 
 final class FavoriteMixesSpecificationAdapter implements DoctrineSpecificationInterface
 {

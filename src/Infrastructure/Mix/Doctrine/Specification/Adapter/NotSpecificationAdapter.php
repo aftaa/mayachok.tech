@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Mix\Doctrine\Specification;
+namespace App\Infrastructure\Mix\Doctrine\Specification\Adapter;
 
 use App\Domain\Mix\Specification\NotSpecification;
+use App\Infrastructure\Mix\Doctrine\Specification\Contract\DoctrineSpecificationInterface;
+use App\Infrastructure\Mix\Doctrine\Specification\Factory\SpecificationAdapterFactory;
 
 final class NotSpecificationAdapter implements DoctrineSpecificationInterface
 {
