@@ -1,10 +1,3 @@
-parameters:
-    s3.key: '%env(S3_KEY)%'
-    s3.secret: '%env(S3_SECRET)%'
-    s3.bucket: '%env(S3_BUCKET)%'
-    s3.endpoint: '%env(S3_ENDPOINT)%'
-    s3.region: '%env(S3_REGION)%'
-
 services:
     _defaults:
         autowire: true
@@ -18,14 +11,7 @@ services:
             - '../src/Infrastructure/Mix/Doctrine/Specification/Adapter/'
             - '../src/Domain/User/ValueObject/UserId.php'
 
-#    App\Service\UploadLimiter:
-#        arguments:
-#            $redisDsn: '%env(REDIS_URL)%/2'
-
     _instanceof:
-#        App\Domain\Mix\Specification\SpecificationInterface:
-#            tags: ['app.doctrine.specification']
-
         App\Application\Message\Command\CommandHandlerInterface:
             tags:
                 - { name: messenger.message_handler, bus: command.bus }
@@ -38,12 +24,9 @@ services:
             tags:
                 - { name: messenger.message_handler, bus: event.bus }
 
-#        App\Infrastructure\Mix\Doctrine\Specification\DoctrineSpecificationInterface:
-#            tags: ['app.doctrine.specification_adapter']
-
-#    App\Infrastructure\Mix\Doctrine\Specification\SpecificationAdapterFactory:
-#        arguments:
-#            $adapters: !tagged_iterator 'app.doctrine.specification_adapter'
-
     App\Domain\Mix\Repository\MixRepositoryInterface:
         class: App\Infrastructure\Doctrine\Repository\MixRepository
+
+    App\Infrastructure\Mix\Doctrine\Mapper\MixMapper:
+        arguments:
+            $userRepository: '@App\Infrastructure\Doctrine\Repository\UserRepository'

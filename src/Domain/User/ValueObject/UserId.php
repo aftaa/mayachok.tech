@@ -4,79 +4,54 @@ declare(strict_types=1);
 
 namespace App\Domain\User\ValueObject;
 
-use App\Shared\Domain\ValueObject\Uuid;
+use Symfony\Component\Uid\Uuid;
 
 final class UserId
 {
-    private string $value;
+    private Uuid $value;
 
-    private function __construct(string $value)
+    private function __construct(Uuid $value)
     {
-        if (!Uuid::isValid($value)) {
-            throw new \InvalidArgumentException('Invalid UserId format. Expected valid UUID.');
-        }
         $this->value = $value;
     }
 
-    /**
-     * Создать новый UserId (генерация UUID v4)
-     */
     public static function generate(): self
     {
-        return new self(Uuid::v4()->toString());
+        return new self(Uuid::v7());
     }
 
-    /**
-     * Создать UserId из строки
-     */
     public static function fromString(string $value): self
+    {
+        return new self(Uuid::fromString($value));
+    }
+
+    public static function fromUuid(Uuid $value): self
     {
         return new self($value);
     }
 
-    /**
-     * Создать UserId из целого числа (для обратной совместимости с Legacy)
-     */
-    public static function fromInt(int $id): self
+    public function toString(): string
     {
-        // Конвертируем int в UUID-подобный формат или просто в строку
-        // Вариант 1: Используем как есть (если Legacy использовал int)
-        // return new self((string) $id);
-
-        // Вариант 2: Генерируем детерминированный UUID из int
-        return new self(
-            sprintf(
-                '00000000-0000-0000-0000-%012d',
-                $id
-            )
-        );
+        return $this->value->toRfc4122();
     }
 
-    public function toString(): string
+    public function toBinary(): string
+    {
+        return $this->value->toBinary();
+    }
+
+    public function getValue(): Uuid
     {
         return $this->value;
     }
 
-    public function toInt(): int
-    {
-        // Если в БД хранится как int, а в Domain как UUID
-        // Этот метод нужен для обратной совместимости
-        $hex = str_replace('-', '', $this->value);
-        return (int) hexdec(substr($hex, -12));
-    }
-
     public function equals(self $other): bool
     {
-        return $this->value === $other->value;
+        return $this->value->equals($other->value);
     }
 
-    public function isEqualTo(?self $other): bool
+    public function __toString(): string
     {
-        return $other !== null && $this->equals($other);
-    }
-
-    public function isEmpty(): bool
-    {
-        return empty($this->value);
+        return $this->toString();
     }
 }

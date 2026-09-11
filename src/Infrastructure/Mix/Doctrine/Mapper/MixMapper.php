@@ -15,23 +15,40 @@ use App\Domain\Mix\ValueObject\MixTitle;
 use App\Domain\Mix\ValueObject\TrackMetadata;
 use App\Domain\Mix\ValueObject\Visibility;
 use App\Domain\User\ValueObject\UserId;
-use App\Infrastructure\Doctrine\Entity\Mix as MixDoctrine;  // 👈 ПРАВИЛЬНЫЙ ПУТЬ!
-use App\Infrastructure\Doctrine\Entity\User as UserDoctrine; // 👈 ДЛЯ СВЯЗИ С ПОЛЬЗОВАТЕЛЕМ
+use App\Infrastructure\Doctrine\Entity\Mix as MixDoctrine;
+use App\Infrastructure\Doctrine\Entity\User as UserDoctrine;
+use App\Infrastructure\Doctrine\Repository\UserRepository;
 use App\Shared\Domain\ValueObject\DateTime;
 
-final class MixMapper implements MixMapperInterface  // 👈 НУЖЕН ИНТЕРФЕЙС
+final class MixMapper implements MixMapperInterface
 {
+    public function __construct(
+        private readonly UserRepository $userRepository,
+    ) {
+    }
+
     public function toDoctrine(Mix $mix): MixDoctrine
     {
         $entity = new MixDoctrine();
 
+        // ID
+        $entity->setId($mix->getId()->getValue());
+
+        // Slug (пока null)
+        // $entity->setSlug($mix->getSlug()); // TODO: слаг генерируется позже
+
         // Базовые свойства
-        $entity->setUuid($mix->getId()->toString());
         $entity->setTitle($mix->getMetadata()->getTitle()->toString());
         $entity->setArtist($mix->getMetadata()->getArtist()->toString());
         $entity->setIsPrivate($mix->isPrivate());
-        $entity->setStatus($mix->getStatus()->value);
-        $entity->setIsProcessed($mix->isReady());
+        $entity->setStatus($mix->getStatus());
+
+        // Пользователь
+        $user = $this->userRepository->find($mix->getOwnerId()->getValue());
+        if (!$user) {
+            throw new \RuntimeException('User not found: ' . $mix->getOwnerId()->toString());
+        }
+        $entity->setUser($user);
 
         // Файлы
         $entity->setOriginalPath($mix->getOriginalFileId()?->toString());
@@ -51,35 +68,23 @@ final class MixMapper implements MixMapperInterface  // 👈 НУЖЕН ИНТЕ
         $entity->setCreatedAt($mix->getCreatedAt()->toDateTimeImmutable());
         $entity->setProcessedAt($mix->getProcessedAt()?->toDateTimeImmutable());
 
-        // TODO: Связь с пользователем
-        // $entity->setUser($this->getUserDoctrine($mix->getOwnerId()));
-
         return $entity;
     }
 
     public function toDomain(MixDoctrine $entity): Mix
     {
-        $id = MixId::fromString($entity->getUuid());
+        $id = MixId::fromUuid($entity->getId());
 
         $metadata = new TrackMetadata(
             new MixTitle($entity->getTitle()),
             new ArtistName($entity->getArtist())
         );
 
-        // TODO: Получить UserId из связи
-        $ownerId = UserId::fromInt($entity->getUser()->getId());
+        $ownerId = UserId::fromUuid($entity->getUser()->getId());
 
         $visibility = $entity->isPrivate()
             ? Visibility::private()
             : Visibility::public();
-
-        $status = match($entity->getStatus()) {
-            'pending' => MixStatus::PENDING,
-            'processing' => MixStatus::PROCESSING,
-            'ready' => MixStatus::READY,
-            'failed' => MixStatus::FAILED,
-            default => MixStatus::PENDING,
-        };
 
         $originalFileId = $entity->getS3OriginalKey() !== null
             ? FileId::fromString($entity->getS3OriginalKey())
@@ -119,7 +124,7 @@ final class MixMapper implements MixMapperInterface  // 👈 НУЖЕН ИНТЕ
             $metadata,
             $ownerId,
             $visibility,
-            $status,
+            $entity->getStatus(),
             $originalFileId,
             $streamFileId,
             $peaksFileId,
@@ -130,13 +135,5 @@ final class MixMapper implements MixMapperInterface  // 👈 НУЖЕН ИНТЕ
             $createdAt,
             $processedAt,
         );
-    }
-
-    // 👇 ВСПОМОГАТЕЛЬНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ПОЛЬЗОВАТЕЛЯ
-    private function getUserDoctrine(UserId $userId): UserDoctrine
-    {
-        // TODO: Реализовать поиск пользователя
-        // Это временное решение, лучше использовать UserRepository
-        throw new \RuntimeException('Not implemented yet');
     }
 }

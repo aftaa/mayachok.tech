@@ -1,23 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Doctrine\Entity;
 
+use App\Domain\Mix\ValueObject\MixStatus;
 use App\Infrastructure\Doctrine\Repository\MixRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: MixRepository::class)]
 class Mix
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    private ?Uuid $id = null;
 
-    #[ORM\Column(type: 'string', length: 36, unique: true)]
-    private ?string $uuid = null;
+    #[ORM\Column(type: 'string', length: 255, unique: true, nullable: true)]
+    private ?string $slug = null;
 
     #[ORM\Column(length: 255)]
     private ?string $title = null;
@@ -25,15 +28,15 @@ class Mix
     #[ORM\Column(length: 255)]
     private ?string $artist = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $original_path = null;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $originalPath = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
-    #[ORM\Column]
-    private ?bool $isProcessed = null;
+    #[ORM\Column(type: 'string', length: 20, enumType: MixStatus::class, options: ['default' => 'pending'])]
+    private MixStatus $status = MixStatus::PENDING;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $s3OriginalKey = null;
@@ -59,6 +62,12 @@ class Mix
     #[ORM\Column(nullable: true)]
     private ?int $peaksSize = null;
 
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $processedAt = null;
+
     /**
      * @var Collection<int, User>
      */
@@ -67,18 +76,34 @@ class Mix
 
     public function __construct()
     {
-        $this->uuid = Uuid::v4()->toRfc4122();
         $this->favoritedBy = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
+    // ========================================
+    // ГЕТТЕРЫ И СЕТТЕРЫ
+    // ========================================
+
+    public function getId(): ?Uuid
     {
         return $this->id;
     }
 
-    public function getUuid(): ?string
+    public function setId(Uuid $id): static
     {
-        return $this->uuid;
+        $this->id = $id;
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): static
+    {
+        $this->slug = $slug;
+        return $this;
     }
 
     public function getTitle(): ?string
@@ -89,7 +114,6 @@ class Mix
     public function setTitle(string $title): static
     {
         $this->title = $title;
-
         return $this;
     }
 
@@ -101,19 +125,17 @@ class Mix
     public function setArtist(string $artist): static
     {
         $this->artist = $artist;
-
         return $this;
     }
 
     public function getOriginalPath(): ?string
     {
-        return $this->original_path;
+        return $this->originalPath;
     }
 
-    public function setOriginalPath(string $original_path): static
+    public function setOriginalPath(?string $originalPath): static
     {
-        $this->original_path = $original_path;
-
+        $this->originalPath = $originalPath;
         return $this;
     }
 
@@ -125,19 +147,17 @@ class Mix
     public function setUser(?User $user): static
     {
         $this->user = $user;
-
         return $this;
     }
 
-    public function isProcessed(): ?bool
+    public function getStatus(): MixStatus
     {
-        return $this->isProcessed;
+        return $this->status;
     }
 
-    public function setIsProcessed(bool $is_processed): static
+    public function setStatus(MixStatus $status): static
     {
-        $this->isProcessed = $is_processed;
-
+        $this->status = $status;
         return $this;
     }
 
@@ -149,7 +169,6 @@ class Mix
     public function setS3OriginalKey(?string $s3OriginalKey): static
     {
         $this->s3OriginalKey = $s3OriginalKey;
-
         return $this;
     }
 
@@ -161,7 +180,6 @@ class Mix
     public function setS3StreamKey(?string $s3StreamKey): static
     {
         $this->s3StreamKey = $s3StreamKey;
-
         return $this;
     }
 
@@ -173,7 +191,6 @@ class Mix
     public function setPeaksKey(?string $peaksKey): static
     {
         $this->peaksKey = $peaksKey;
-
         return $this;
     }
 
@@ -185,7 +202,6 @@ class Mix
     public function setDuration(?int $duration): static
     {
         $this->duration = $duration;
-
         return $this;
     }
 
@@ -197,7 +213,6 @@ class Mix
     public function setIsPrivate(bool $isPrivate): static
     {
         $this->isPrivate = $isPrivate;
-
         return $this;
     }
 
@@ -209,7 +224,6 @@ class Mix
     public function setOriginalSize(?int $originalSize): static
     {
         $this->originalSize = $originalSize;
-
         return $this;
     }
 
@@ -221,7 +235,6 @@ class Mix
     public function setMp3Size(?int $mp3Size): static
     {
         $this->mp3Size = $mp3Size;
-
         return $this;
     }
 
@@ -233,7 +246,28 @@ class Mix
     public function setPeaksSize(?int $peaksSize): static
     {
         $this->peaksSize = $peaksSize;
+        return $this;
+    }
 
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getProcessedAt(): ?\DateTimeImmutable
+    {
+        return $this->processedAt;
+    }
+
+    public function setProcessedAt(?\DateTimeImmutable $processedAt): static
+    {
+        $this->processedAt = $processedAt;
         return $this;
     }
 
@@ -256,7 +290,6 @@ class Mix
             $this->favoritedBy->add($favoritedBy);
             $favoritedBy->addFavoriteMix($this);
         }
-
         return $this;
     }
 
@@ -265,7 +298,6 @@ class Mix
         if ($this->favoritedBy->removeElement($favoritedBy)) {
             $favoritedBy->removeFavoriteMix($this);
         }
-
         return $this;
     }
 }

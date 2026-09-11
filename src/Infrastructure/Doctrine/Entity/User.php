@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Doctrine\Entity;
 
 use App\Infrastructure\Doctrine\Repository\UserRepository;
@@ -7,20 +9,24 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    private ?Uuid $id = null;
 
     #[ORM\Column(length: 180)]
     private ?string $email = null;
+
+    #[ORM\Column(type: 'string', length: 255, unique: true, nullable: true)]
+    private ?string $slug = null;
 
     /**
      * @var list<string> The user roles
@@ -28,9 +34,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
     #[ORM\Column]
     private ?string $password = null;
 
@@ -66,9 +69,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->favoriteMixes = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    // ========================================
+    // ГЕТТЕРЫ И СЕТТЕРЫ
+    // ========================================
+
+    public function getId(): ?Uuid
     {
         return $this->id;
+    }
+
+    public function setId(Uuid $id): static
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): static
+    {
+        $this->slug = $slug;
+        return $this;
     }
 
     public function getEmail(): ?string
@@ -79,7 +103,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -92,17 +115,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = $this->roles;
         $roles[] = 'ROLE_USER';
-
         return array_unique($roles);
     }
 
-    /**
-     * @param list<string> $roles
-     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
-
         return $this;
     }
 
@@ -114,7 +132,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
@@ -122,7 +139,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $data = (array) $this;
         $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
-
         return $data;
     }
 
@@ -134,7 +150,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setOauthId(string $oauthId): static
     {
         $this->oauthId = $oauthId;
-
         return $this;
     }
 
@@ -146,7 +161,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDisplayName(string $displayName): static
     {
         $this->displayName = $displayName;
-
         return $this;
     }
 
@@ -158,7 +172,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAvatarUrl(string $avatarUrl): static
     {
         $this->avatarUrl = $avatarUrl;
-
         return $this;
     }
 
@@ -170,7 +183,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setBirthday(\DateTime $birthday): static
     {
         $this->birthday = $birthday;
-
         return $this;
     }
 
@@ -182,14 +194,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setStorageUsed(int $storageUsed): static
     {
         $this->storageUsed = $storageUsed;
-
         return $this;
     }
 
     public function addStorageUsed(int $bytes): static
     {
         $this->storageUsed += $bytes;
-
         return $this;
     }
 
@@ -199,7 +209,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->storageUsed < 0) {
             $this->storageUsed = 0;
         }
-
         return $this;
     }
 
@@ -211,7 +220,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setStorageLimit(int $storageLimit): static
     {
         $this->storageLimit = $storageLimit;
-
         return $this;
     }
 
@@ -220,7 +228,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if (0 == $this->getStorageLimit()) {
             return true;
         }
-
         return ($this->storageUsed + $bytes) <= $this->storageLimit;
     }
 
@@ -237,14 +244,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if (!$this->favoriteMixes->contains($favoriteMix)) {
             $this->favoriteMixes->add($favoriteMix);
         }
-
         return $this;
     }
 
     public function removeFavoriteMix(Mix $favoriteMix): static
     {
         $this->favoriteMixes->removeElement($favoriteMix);
-
         return $this;
     }
 

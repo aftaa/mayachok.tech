@@ -71,7 +71,7 @@ final class Mix
         ?Visibility $visibility = null,
     ): self {
         return new self(
-            MixId::generate(),
+            MixId::generate(), // 👈 UUID v7 генерируется здесь
             $metadata,
             $ownerId,
             $visibility ?? Visibility::public(),

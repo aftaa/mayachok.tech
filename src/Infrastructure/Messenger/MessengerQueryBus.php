@@ -1,25 +1,25 @@
 <?php
 
-namespace App\Infrastructure\Bus;
+namespace App\Infrastructure\Messenger;
 
-use App\Application\Message\Bus\CommandBusInterface;
+use App\Application\Message\Bus\QueryBusInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
 
-readonly class MessengerCommandBus implements CommandBusInterface
+readonly class MessengerQueryBus implements QueryBusInterface
 {
-    private function __construct(
-        private MessageBusInterface $commandBus,
+    public function __construct(
+        private MessageBusInterface $queryBus,
     ) {
     }
 
     /**
      * @throws ExceptionInterface
      */
-    public function dispatch(object $command): mixed
+    public function dispatch(object $query): mixed
     {
-        $envelope = $this->commandBus->dispatch($command);
+        $envelope = $this->queryBus->dispatch($query);
         $stamp = $envelope->last(HandledStamp::class);
 
         return $stamp?->getResult();

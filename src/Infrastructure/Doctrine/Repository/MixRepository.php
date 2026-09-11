@@ -24,10 +24,6 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
         parent::__construct($registry, MixDoctrine::class);
     }
 
-    // ========================================
-    // 1. БАЗОВЫЕ ОПЕРАЦИИ
-    // ========================================
-
     public function save(Mix $mix): void
     {
         $entity = $this->mapper->toDoctrine($mix);
@@ -37,20 +33,16 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
 
     public function delete(Mix $mix): void
     {
-        $entity = $this->findDoctrineById($mix->getId());
+        $entity = $this->find($mix->getId()->getValue());
         if ($entity !== null) {
             $this->getEntityManager()->remove($entity);
             $this->getEntityManager()->flush();
         }
     }
 
-    // ========================================
-    // 2. ПОИСК
-    // ========================================
-
     public function findById(MixId $id): ?Mix
     {
-        $entity = $this->findDoctrineById($id);
+        $entity = $this->find($id->getValue());
         return $entity !== null ? $this->mapper->toDomain($entity) : null;
     }
 
@@ -68,18 +60,15 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
         $adapter = $this->adapterFactory->create($specification);
         $qb = $this->createQueryBuilder('m');
 
-        // Добавляем JOIN-ы
         foreach ($adapter->getJoins() as $join) {
             $qb->leftJoin($join, null, 'WITH');
         }
 
-        // Добавляем WHERE
         $dql = $adapter->toDQL('m');
         if ($dql !== null) {
             $qb->where($dql);
         }
 
-        // Добавляем параметры
         foreach ($adapter->getParameters() as $key => $value) {
             $qb->setParameter($key, $value);
         }
@@ -95,21 +84,17 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
     public function countMatches(SpecificationInterface $specification): int
     {
         $adapter = $this->adapterFactory->create($specification);
-        $qb = $this->createQueryBuilder('m')
-            ->select('COUNT(m.id)');
+        $qb = $this->createQueryBuilder('m')->select('COUNT(m.id)');
 
-        // Добавляем JOIN-ы
         foreach ($adapter->getJoins() as $join) {
             $qb->leftJoin($join, null, 'WITH');
         }
 
-        // Добавляем WHERE
         $dql = $adapter->toDQL('m');
         if ($dql !== null) {
             $qb->where($dql);
         }
 
-        // Добавляем параметры
         foreach ($adapter->getParameters() as $key => $value) {
             $qb->setParameter($key, $value);
         }
@@ -119,15 +104,6 @@ final class MixRepository extends ServiceEntityRepository implements MixReposito
 
     public function exists(MixId $id): bool
     {
-        return $this->findDoctrineById($id) !== null;
-    }
-
-    // ========================================
-    // 3. ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    // ========================================
-
-    private function findDoctrineById(MixId $id): ?MixDoctrine
-    {
-        return $this->findOneBy(['uuid' => $id->toString()]);
+        return $this->find($id->getValue()) !== null;
     }
 }
