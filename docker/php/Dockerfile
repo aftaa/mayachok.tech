@@ -29,7 +29,13 @@ ARG APP_DIR
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends curl git mc unzip supervisor procps ffmpeg sox
 RUN apt-get install -y libgd3 libmad0 libid3tag0 libboost-program-options1.83.0 libboost-filesystem1.83.0
-RUN pecl install redis && docker-php-ext-enable redis
+
+RUN curl -fL --output /tmp/pie.phar https://github.com/php/pie/releases/latest/download/pie.phar \
+    && chmod +x /tmp/pie.phar \
+    && mv /tmp/pie.phar /usr/local/bin/pie
+
+#RUN pecl install redis && docker-php-ext-enable redis
+RUN pie install pie-extensions/redis
 
 COPY --link --from=ghcr.io/symfony-cli/symfony-cli:latest /usr/local/bin/symfony /usr/local/bin/symfony
 COPY --from=audiowaveform-builder /tmp/audiowaveform/build/audiowaveform /usr/local/bin/audiowaveform
