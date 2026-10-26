@@ -20,7 +20,7 @@ final class Version20260909144257 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE mix ADD status VARCHAR(20) DEFAULT \'pending\' NOT NULL, ADD created_at DATETIME NOT NULL, ADD processed_at DATETIME DEFAULT NULL, DROP is_processed');
+        $this->addSql('ALTER TABLE mix ADD status VARCHAR(20) DEFAULT \'pending\' NOT NULL, ADD created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ADD processed_at DATETIME DEFAULT NULL, DROP is_processed');
     }
 
     public function down(Schema $schema): void
